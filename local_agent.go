@@ -11,11 +11,22 @@ import "bufio"
 import "time"
 import "runtime"
 
-func postData(data string) {
+
+func postData(data string, log_filename string) {
+//    HOST := "localhost:4567"
+    HOST := "ec2-107-22-44-241.compute-1.amazonaws.com:8086"
+
+    API_KEY := "ignored"
+    APP_NAME := "test_app"
+    SERVER_NAME := "bobs_server"
+    log_filename = "matt2.txt"
 //    contents,_ := ioutil.ReadAll(data);
 //	buf := bytes.NewBuffer("your string")
 	buf2 := bytes.NewBufferString(data)
-    http.Post("http://localhost:4567/hi", "application/text", buf2)
+    //TODO url escaping
+    url := fmt.Sprintf("http://%s/api/v1/applications/%s/logs/%s/servers/%s?api_key=%s", HOST, APP_NAME, log_filename, SERVER_NAME, API_KEY)
+    fmt.Printf("posting to url -%s\n%s\n", url,buf2)
+    http.Post(url, "application/text", buf2)
 //TODO HANDLE ERROR AND RETRIES!
 }
 
@@ -42,7 +53,7 @@ func readData(filename string) {
         lines += 1
         if(lines > 5 ) { //|| time > 1 min) {
             fmt.Printf("Clearing buffer and posting to http\n")
-            postData(sbuffer)
+            postData(sbuffer, filename)
             sbuffer = ""
             lines = 0
         }
