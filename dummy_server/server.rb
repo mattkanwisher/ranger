@@ -1,7 +1,7 @@
 require 'sinatra'
 
-post '/api/v1/applications/:app_name/logs/:log_name/servers/:server_name' do
-   puts "Got request app name : #{params[:app_name]} - log name #{params[:log_name]} -  server #{params[:server_name]}"
+post '/api/v1/logs/:log_id/agent/:agent_id' do
+   puts "Got request app name : log name #{params[:log_id]} -  server #{params[:agent_id]}"
    raw = request.env["rack.input"].read
    puts raw
    "-------"

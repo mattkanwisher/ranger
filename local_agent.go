@@ -10,21 +10,35 @@ import "os/exec"
 import "bufio"
 import "time"
 import "runtime"
+import "github.com/kless/goconfig/config"
+import "encoding/json"
+import "os"
+import "io/ioutil"
 
+type jsonobject struct {
+    Object ObjectType
+}
+
+type ObjectType struct {
+    Buffer_size int
+    Databases   []DatabasesType
+}
+
+type DatabasesType struct {
+}
 
 func postData(data string, log_filename string) {
 //    HOST := "localhost:4567"
     HOST := "ec2-107-22-44-241.compute-1.amazonaws.com:8086"
 
     API_KEY := "ignored"
-    APP_NAME := "test_app"
     SERVER_NAME := "bobs_server"
-    log_filename = "matt2.txt"
+    log_id := 123
 //    contents,_ := ioutil.ReadAll(data);
 //	buf := bytes.NewBuffer("your string")
 	buf2 := bytes.NewBufferString(data)
     //TODO url escaping
-    url := fmt.Sprintf("http://%s/api/v1/applications/%s/logs/%s/servers/%s?api_key=%s", HOST, APP_NAME, log_filename, SERVER_NAME, API_KEY)
+    url := fmt.Sprintf("http://%s/api/v1/logs/%s/agents/%s?api_key=%s", HOST, log_id, SERVER_NAME, API_KEY)
     fmt.Printf("posting to url -%s\n%s\n", url,buf2)
     http.Post(url, "application/text", buf2)
 //TODO HANDLE ERROR AND RETRIES!
@@ -65,8 +79,22 @@ func readData(filename string) {
 
 func main() {
     fmt.Printf("hello, world\n")
+    c, _ := config.ReadDefault("samples/sample_base_config")
+    y,_ := c.String("service-1", "url")
+    fmt.Printf("%s\n", y)
 
- 
+
+   file, e := ioutil.ReadFile("samples/sample_config.json")
+    if e != nil {
+        fmt.Printf("File error: %v\n", e)
+        os.Exit(1)
+    }
+    fmt.Printf("%s\n", string(file))
+    
+    var jsontype jsonobject
+    json.Unmarshal(file, &jsontype)
+    fmt.Printf("Results: %v\n", jsontype)
+
     path, err := exec.LookPath("tail")
     if err != nil {
         log.Fatal("installing tail is in your future")
