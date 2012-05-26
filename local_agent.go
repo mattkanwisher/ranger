@@ -12,7 +12,7 @@ import "time"
 import "runtime"
 import "github.com/kless/goconfig/config"
 import "encoding/json"
-import "os"
+//import "os"
 import "io/ioutil"
 
 type jsonobject struct {
@@ -80,19 +80,27 @@ func readData(filename string) {
 func main() {
     fmt.Printf("hello, world\n")
     c, _ := config.ReadDefault("samples/sample_base_config")
-    y,_ := c.String("service-1", "url")
-    fmt.Printf("%s\n", y)
+    api_url,_ := c.String("DEFAULT", "host")
+    fmt.Printf("----%s---\n", api_url)
 
-
-   file, e := ioutil.ReadFile("samples/sample_config.json")
+/*
+    file, e := ioutil.ReadFile("samples/sample_config.json")
     if e != nil {
         fmt.Printf("File error: %v\n", e)
         os.Exit(1)
     }
     fmt.Printf("%s\n", string(file))
-    
+*/  
+    resp, err := http.Get(api_url + "/json_api")
+    if err != nil {
+        // handle error
+        fmt.Printf("error getting config data-%s\n",err) 
+    }
+    defer resp.Body.Close()
+    body, err := ioutil.ReadAll(resp.Body)
+
     var jsontype jsonobject
-    json.Unmarshal(file, &jsontype)
+    json.Unmarshal(body, &jsontype)
     fmt.Printf("Results: %v\n", jsontype)
 
     path, err := exec.LookPath("tail")

@@ -1,6 +1,5 @@
 [DEFAULT]
-host: www.example.com
-protocol: http://
+host: http://localhost:4567
 base-url: %(protocol)s%(host)s
 
 [service-1]

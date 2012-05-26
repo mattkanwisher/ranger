@@ -7,6 +7,10 @@ post '/api/v1/logs/:log_id/agent/:agent_id' do
    "-------"
 end
 
+get '/json_api' do
+   IO.read("samples/sample_config.json")
+end
+
 #post '/api/v1/applications/test_app/logs/log_filename/servers/bobs_server' do
 #  puts "whatever"
 #  "Hello World"
