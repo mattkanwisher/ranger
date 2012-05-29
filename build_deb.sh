@@ -1,4 +1,6 @@
-PATH=$PATH:/var/lib/jenkins/bin/
+GOROOT=/var/lib/jenkins
+GOBIN=/var/lib/jenkins/bin
+PATH=$PATH:/var/lib/jenkins/bin
 go build src/local_agent.go
 go install launchpad.net/gocheck
 go install github.com/kless/goconfig/config
