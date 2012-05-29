@@ -1,6 +1,6 @@
 [DEFAULT]
-host: http://localhost:4567
-base-url: %(protocol)s%(host)s
+api-host: http://localhost:4567
+config-host: http://localhost:4567
 
 [service-1]
 url: %(base-url)s/some/path

@@ -1,0 +1,8 @@
+Package: errplane 
+Version: 1.0 
+Section: base 
+Priority: optional 
+Architecture: all 
+Depends: bash 
+Maintainer: support@errplane.com 
+Description: ErrPlane Local agent 
