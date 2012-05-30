@@ -1,6 +1,7 @@
 GOROOT=/var/lib/jenkins/go
 GOBIN=/var/lib/jenkins/bin
 PATH=$PATH:/var/lib/jenkins/bin
+sed "s/_BUILD_/${BUILD_NUMBER}/g" packages/deb_pkg/errplane/DEBIAN/control 
 go build src/local_agent.go
 go get launchpad.net/gocheck
 go get github.com/kless/goconfig/config
