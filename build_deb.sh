@@ -2,6 +2,7 @@ CONTROL=packages/deb_pkg/errplane/DEBIAN/control
 GOROOT=/var/lib/jenkins/go
 GOBIN=/var/lib/jenkins/bin
 PATH=$PATH:/var/lib/jenkins/bin
+#requires gnu sed 
 sed -i "s/_BUILD_/${BUILD_NUMBER}/g" $CONTROL 
 go build src/local_agent.go
 go get launchpad.net/gocheck
