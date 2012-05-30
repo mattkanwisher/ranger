@@ -15,6 +15,8 @@ import "encoding/json"
 //import "os"
 import "io/ioutil"
 
+BUILD_NUMBER = "1.0._BUILD_"
+
 type jsonobject struct {
     Object ObjectType
 }
@@ -78,7 +80,7 @@ func readData(filename string) {
 }
 
 func main() {
-    fmt.Printf("hello, world\n")
+    fmt.Printf("ERRPlane Local Agent starting, Version %s \n", BUILD_NUMBER)
     c, _ := config.ReadDefault("samples/sample_base_config")
     api_url,_ := c.String("DEFAULT", "host")
     fmt.Printf("----%s---\n", api_url)
