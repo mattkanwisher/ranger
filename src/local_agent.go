@@ -11,11 +11,11 @@ import "bufio"
 import "time"
 import "runtime"
 import "github.com/kless/goconfig/config"
-import "encoding/json"
-//import "os"
+//import "encoding/json"
+import "os"
 import "io/ioutil"
 
-BUILD_NUMBER = "1.0._BUILD_"
+var BUILD_NUMBER = "1.0._BUILD_"
 
 type jsonobject struct {
     Object ObjectType
@@ -46,6 +46,10 @@ func postData(data string, log_filename string) {
 //TODO HANDLE ERROR AND RETRIES!
 }
 
+
+func getProcessStats() {
+    //top -n1 -b
+}
 
 func readData(filename string) {
     fmt.Printf("in read data !")
@@ -85,14 +89,15 @@ func main() {
     api_url,_ := c.String("DEFAULT", "host")
     fmt.Printf("----%s---\n", api_url)
 
-/*
+
     file, e := ioutil.ReadFile("samples/sample_config.json")
     if e != nil {
         fmt.Printf("File error: %v\n", e)
         os.Exit(1)
     }
     fmt.Printf("%s\n", string(file))
-*/  
+  
+/*
     resp, err := http.Get(api_url + "/json_api")
     if err != nil {
         // handle error
@@ -104,7 +109,7 @@ func main() {
     var jsontype jsonobject
     json.Unmarshal(body, &jsontype)
     fmt.Printf("Results: %v\n", jsontype)
-
+*/
     path, err := exec.LookPath("tail")
     if err != nil {
         log.Fatal("installing tail is in your future")
