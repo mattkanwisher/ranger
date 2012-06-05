@@ -11,36 +11,72 @@ import "bufio"
 import "time"
 import "runtime"
 import "github.com/kless/goconfig/config"
-//import "encoding/json"
+import "encoding/json"
 import "os"
 import "io/ioutil"
+import "github.com/droundy/goopt"
 
 var BUILD_NUMBER = "1.0._BUILD_"
+/*
+{
+configuration_interval: 30,
+created_at: "2012-05-30T20:51:43Z",
+id: 1,
+name: null,
+organization_id: 1,
+server: "fasdsdfdasd",
+updated_at: "2012-05-30T20:51:43Z",
+version: "1.0.99",
+agent_logs: [
+  {
+    agent_id: 1,
+    created_at: "2012-05-30T20:59:01Z",
+    id: 1,
+    log_id: 2,
+    updated_at: "2012-05-30T20:59:01Z",
+    log: {
+      created_at: "2012-05-30T20:56:20Z",
+      id: 2,
+      log_type_id: null,
+      name: "apache",
+      organization_id: 1,
+      path: "/var/log/apache/access.log",
+      updated_at: "2012-05-30T20:56:33Z"
+    }
+  }
+ ]
+}
+*/
 
 type jsonobject struct {
-    Object ObjectType
+ //   Object AgentConfigType
+//}
+
+//type AgentConfigType struct {
+    id int
+    version string
+//    agent_logs   []AgentLogType
+}
+/*
+type AgentLogType struct {
+    Log []LogType
 }
 
-type ObjectType struct {
-    Buffer_size int
-    Databases   []DatabasesType
+type LogType struct {
+    id int
+    name string
+    path string
 }
+*/
 
-type DatabasesType struct {
-}
-
-func postData(data string, log_filename string) {
-//    HOST := "localhost:4567"
-    HOST := "ec2-107-22-44-241.compute-1.amazonaws.com:8086"
-
-    API_KEY := "ignored"
+func postData(api_key string, api_server string, data string, log_filename string) {
     SERVER_NAME := "bobs_server"
     log_id := 123
 //    contents,_ := ioutil.ReadAll(data);
 //	buf := bytes.NewBuffer("your string")
 	buf2 := bytes.NewBufferString(data)
     //TODO url escaping
-    url := fmt.Sprintf("http://%s/api/v1/logs/%s/agents/%s?api_key=%s", HOST, log_id, SERVER_NAME, API_KEY)
+    url := fmt.Sprintf("http://%s/api/v1/logs/%s/agents/%s?api_key=%s", api_server, log_id, SERVER_NAME, api_key)
     fmt.Printf("posting to url -%s\n%s\n", url,buf2)
     http.Post(url, "application/text", buf2)
 //TODO HANDLE ERROR AND RETRIES!
@@ -51,7 +87,7 @@ func getProcessStats() {
     //top -n1 -b
 }
 
-func readData(filename string) {
+func readData(api_key, api_server, filename string) {
     fmt.Printf("in read data !")
     cmd := exec.Command("tail", "-f", filename)
     stdout, err := cmd.StdoutPipe()
@@ -73,7 +109,7 @@ func readData(filename string) {
         lines += 1
         if(lines > 5 ) { //|| time > 1 min) {
             fmt.Printf("Clearing buffer and posting to http\n")
-            postData(sbuffer, filename)
+            postData(api_key, api_server, sbuffer, filename)
             sbuffer = ""
             lines = 0
         }
@@ -82,45 +118,79 @@ func readData(filename string) {
         }
     }
 }
-
-func main() {
-    fmt.Printf("ERRPlane Local Agent starting, Version %s \n", BUILD_NUMBER)
-    c, _ := config.ReadDefault("samples/sample_base_config")
-    api_url,_ := c.String("DEFAULT", "host")
-    fmt.Printf("----%s---\n", api_url)
-
-
-    file, e := ioutil.ReadFile("samples/sample_config.json")
+/*
+func parseJsonFromFile() {
+        file, e := ioutil.ReadFile("samples/sample_config.json")
     if e != nil {
         fmt.Printf("File error: %v\n", e)
         os.Exit(1)
     }
     fmt.Printf("%s\n", string(file))
-  
-/*
-    resp, err := http.Get(api_url + "/json_api")
+
+}
+*/
+//TODO: IF this fails  read from disk, if that fails sleep until the server is back online
+func parseJsonFromHttp(api_url string, api_key string) {
+    server := "TEST"
+    full_config_url := fmt.Sprintf(api_url + "/api/v1/agents/%s/config?api_key=%s", server, api_key)
+    log.Printf("api url %s\n", full_config_url)
+    resp, err := http.Get(full_config_url)
     if err != nil {
         // handle error
-        fmt.Printf("error getting config data-%s\n",err) 
+        fmt.Printf("error getting config data-%s\n",err)    
+        os.Exit(1)
+        return
     }
+
     defer resp.Body.Close()
     body, err := ioutil.ReadAll(resp.Body)
+    fmt.Printf("json-%s\n", body)
 
     var jsontype jsonobject
     json.Unmarshal(body, &jsontype)
-    fmt.Printf("Results: %v\n", jsontype)
-*/
-    path, err := exec.LookPath("tail")
+    fmt.Printf("Results: %v\n", jsontype)    
+//    os.Exit(0)
+}
+
+var config_file = goopt.String([]string{"-c", "--config"}, "", "config file")
+
+func main() {
+    fmt.Printf("ERRPlane Local Agent starting, Version %s \n", BUILD_NUMBER)
+
+    goopt.Description = func() string {
+        return "ERRPlane Local Agent."
+    }
+    goopt.Version = BUILD_NUMBER
+    goopt.Summary = "ErrPlane Log and System Monitor"
+    goopt.Parse(nil)
+
+    var fconfig_file string
+    fconfig_file = *config_file
+    if(fconfig_file == "") {
+        fconfig_file = "samples/sample_base_config"
+    }
+
+    log.Print("Loading config file ", *config_file, ".")
+
+    c, _ := config.ReadDefault(fconfig_file)
+    api_url,_ := c.String("DEFAULT", "api-host")
+    config_url,_ := c.String("DEFAULT", "config-host")
+    api_key,_ := c.String("DEFAULT", "api-key")
+    fmt.Printf("----%s-%s--\n", config_url, api_key)
+
+
+    parseJsonFromHttp(config_url, api_key)
+
+    _, err := exec.LookPath("tail")
     if err != nil {
         log.Fatal("installing tail is in your future")
 //        exit(1)
     }
-    fmt.Printf("tail is available at %s\n", path)
 
     filename := "test_logs/test_log.log"
-    go readData(filename)
+    go readData(api_key, api_url, filename)
     filename2 := "test_logs/test_log2.log"
-    go readData(filename2)
+    go readData(api_key, api_url, filename2)
 
     if err != nil {
         log.Fatal(err)
@@ -132,5 +202,4 @@ func main() {
         time.Sleep(0)
         runtime.Gosched()
     }
-//    postData(stdout)
 }

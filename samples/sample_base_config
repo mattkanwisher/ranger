@@ -1,10 +1,4 @@
 [DEFAULT]
 api-host: http://localhost:4567
 config-host: http://localhost:4567
-
-[service-1]
-url: %(base-url)s/some/path
-delegation: on
-maxclients: 200 # do not set this higher
-comments: This is a multi-line
-    entry   # And this is a comment
+api-key: 9c5be3ed-3bd1-4a42-aa64-8505e188a7e0
