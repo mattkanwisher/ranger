@@ -15,6 +15,7 @@ import "encoding/json"
 import "os"
 import "io/ioutil"
 import "github.com/droundy/goopt"
+import "strings"
 
 var BUILD_NUMBER = "1.0._BUILD_"
 /*
@@ -48,26 +49,33 @@ agent_logs: [
 }
 */
 
-type jsonobject struct {
- //   Object AgentConfigType
-//}
-
-//type AgentConfigType struct {
-    id int
-    version string
-//    agent_logs   []AgentLogType
+type AgentConfigType struct {
+    Id int
+    Version string
+    Server string
+    Configuration_interval int
+    Name string
+    Organization_id int
+    Updated_at string
+    Agent_logs   []AgentLogType
 }
-/*
+
 type AgentLogType struct {
-    Log []LogType
+    Agent_id int
+    Created_at string
+    Id int
+    Log_id int
+    Updated_at string
+    Log LogType
 }
 
 type LogType struct {
-    id int
-    name string
-    path string
+    Id int
+    Name string
+    Path string
+    Created_at string
 }
-*/
+
 
 func postData(api_key string, api_server string, data string, log_filename string) {
     SERVER_NAME := "bobs_server"
@@ -144,12 +152,20 @@ func parseJsonFromHttp(api_url string, api_key string) {
 
     defer resp.Body.Close()
     body, err := ioutil.ReadAll(resp.Body)
-    fmt.Printf("json-%s\n", body)
 
-    var jsontype jsonobject
-    json.Unmarshal(body, &jsontype)
+    body2 := []byte(strings.Replace(string(body), "null", "\"\"", -1))//Go doesn't handle nulls in json very well, lets just cheat
+
+    fmt.Printf("json-%s\n", body2)
+    var jsontype  AgentConfigType
+    err = json.Unmarshal(body2, &jsontype)
+    if err != nil {
+        // handle error
+        fmt.Printf("error parsing config data-%s\n",err)    
+        os.Exit(1)
+        return
+    }
+
     fmt.Printf("Results: %v\n", jsontype)    
-//    os.Exit(0)
 }
 
 var config_file = goopt.String([]string{"-c", "--config"}, "", "config file")
@@ -203,3 +219,4 @@ func main() {
         runtime.Gosched()
     }
 }
+    
