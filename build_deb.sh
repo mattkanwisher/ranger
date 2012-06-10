@@ -11,6 +11,7 @@ sed -i "s/_BUILD_/${BUILD_NUMBER}/g" $VER_SRC
 go build src/local_agent.go
 go get launchpad.net/gocheck
 go get github.com/kless/goconfig/config
+go get github.com/droundy/goopt
 #cp local_agent packages/deb_pkg/errplane/usr/local/bin/errplane-local-agent
 rm packages/deb_pkg/errplane/usr/local/bin/errplane-local-agent
 cp local_agent packages/deb_pkg/errplane-local-agent-${BUILD_NUMBER}
