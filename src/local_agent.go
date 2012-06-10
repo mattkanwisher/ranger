@@ -21,6 +21,7 @@ import "hash"
 import "strconv"
 
 var BUILD_NUMBER = "_BUILD_"
+//var BUILD_NUMBER = "1.0.49"
 var DOWNLOAD_LOCATION = "http://download.errplane.com/errplane-local-agent-%s"
 var OUTPUT_FILE_FORMAT = "errplane-local-agent-%s"
 var cmd *exec.Cmd
@@ -153,7 +154,6 @@ func parseJsonFromHttp(api_url string, api_key string) AgentConfigType {
 
     body2 := []byte(strings.Replace(string(body), "null", "\"\"", -1))//Go doesn't handle nulls in json very well, lets just cheat
 
-    fmt.Printf("json-%s\n", body2)
     var jsontype  AgentConfigType
     err = json.Unmarshal(body2, &jsontype)
     if err != nil {
@@ -161,8 +161,6 @@ func parseJsonFromHttp(api_url string, api_key string) AgentConfigType {
         fmt.Printf("error parsing config data-%s\n",err)    
         os.Exit(1)
     }
-
-    fmt.Printf("Results: %v\n", jsontype)    
     return jsontype
 }
 
@@ -246,6 +244,27 @@ func upgrade_version(new_version string, valid_hash string, out_dir string, agen
 
 }
 
+func checkForUpdatedConfigs(auto_update string, config_url string, api_key string, output_dir string, agent_bin string) {
+    for ;;  {
+        fmt.Printf("auto_update-%s\n", auto_update)
+        //TODO monitor go routines, if one exists reload it
+        time.Sleep(10 * time.Second)
+        fmt.Printf("Waking up to check configuration\n")
+
+        config_data := parseJsonFromHttp(config_url, api_key)
+
+        log.Printf("Expected agent version-%s\n", config_data.Version)
+
+        if auto_update == "true" && config_data.Version != BUILD_NUMBER {
+            upgrade_version(config_data.Version, config_data.Sha256, output_dir, agent_bin)
+            log.Printf("Failed upgrading!\n")
+        } else {
+            log.Printf("Don't need to upgrade versions\n")
+        }
+    }
+
+}
+
 var config_file = goopt.String([]string{"-c", "--config"}, "", "config file")
 
 func main() {
@@ -267,9 +286,9 @@ func main() {
     log.Print("Loading config file ", *config_file, ".")
 
     c, _ := config.ReadDefault(fconfig_file)
-    api_url,_ := c.String("DEFAULT", "api-host")
-    config_url,_ := c.String("DEFAULT", "config-host")
-    api_key,_ := c.String("DEFAULT", "api-key")
+//    api_url,_ := c.String("DEFAULT", "api-host")
+    config_url,_ := c.String("DEFAULT", "config_host")
+    api_key,_ := c.String("DEFAULT", "api_key")
     output_dir,_ := c.String("DEFAULT", "agent_path")
     if(len(output_dir) < 1) {
        output_dir =  "/usr/local/errplane/"
@@ -297,9 +316,6 @@ func main() {
         log.Printf("Don't need to upgrade versions\n")
     }
 
-    if api_url == "123" {
-
-    }
 
 
     _, err := exec.LookPath("tail")
@@ -307,6 +323,8 @@ func main() {
         log.Fatal("installing tail is in your future")
 //        exit(1)
     }
+
+    go checkForUpdatedConfigs(auto_update, config_url, api_key, output_dir, agent_bin)
 
  //   filename := "test_logs/test_log.log"
  //   go readData(api_key, api_url, filename)
