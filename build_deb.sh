@@ -1,4 +1,5 @@
 CONTROL=packages/deb_pkg/errplane/DEBIAN/control 
+CONTROL_POST=packages/deb_pkg/errplane/DEBIAN/postinst 
 VER_SRC=src/local_agent.go
 GOROOT=/var/lib/jenkins/go
 GOBIN=/var/lib/jenkins/bin
@@ -7,6 +8,7 @@ rm ./packages/deb_pkg/errplane*.deb
 rm ./packages/deb_pkg/errplane-local-agent*
 #requires gnu sed 
 sed -i "s/_BUILD_/${BUILD_NUMBER}/g" $CONTROL 
+sed -i "s/_BUILD_/${BUILD_NUMBER}/g" $CONTROL_POST
 sed -i "s/_BUILD_/${BUILD_NUMBER}/g" $VER_SRC 
 go get launchpad.net/gocheck
 go get github.com/kless/goconfig/config
