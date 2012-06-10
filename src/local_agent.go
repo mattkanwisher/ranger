@@ -142,7 +142,7 @@ func parseJsonFromFile() {
 func parseJsonFromHttp(api_url string, api_key string) AgentConfigType {
     server := "TEST"
     full_config_url := fmt.Sprintf(api_url + "/api/v1/agents/%s/config?api_key=%s", server, api_key)
-    log.Printf("api url %s\n", full_config_url)
+    fmt.Printf("api url %s\n", full_config_url)
     resp, err := http.Get(full_config_url)
     if err != nil {
         // handle error
