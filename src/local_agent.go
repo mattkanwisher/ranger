@@ -19,9 +19,10 @@ import "strings"
 import "crypto/sha256" 
 import "hash"
 import "strconv"
+import "syscall"
 
-var BUILD_NUMBER = "_BUILD_"
-//var BUILD_NUMBER = "1.0.49"
+//var BUILD_NUMBER = "_BUILD_"
+var BUILD_NUMBER = "1.0.50"
 var DOWNLOAD_LOCATION = "http://download.errplane.com/errplane-local-agent-%s"
 var OUTPUT_FILE_FORMAT = "errplane-local-agent-%s"
 var cmd *exec.Cmd
@@ -231,12 +232,20 @@ func upgrade_version(new_version string, valid_hash string, out_dir string, agen
     } 
 
     fmt.Printf("Trying new version !\n")
-    cmd = exec.Command(agent_bin)
-    err = cmd.Start()
-    if err != nil {
+//    agent_bin  = "/Users/kanwisher/projects/errplane/local_agent/local_agent"
+//    cmd = exec.Command(agent_bin, "-c", "/Users/kanwisher/projects/errplane/local_agent/config/prod_errplane2.conf" )
+//    err = cmd.Start()
+    argv := []string {"local_agent"} //, "-c", "/Users/kanwisher/projects/errplane/local_agent/config/prod_errplane2.conf"}
+    var proca syscall.ProcAttr
+    proca.Env = os.Environ()
+    proca.Files =  []uintptr{uintptr(syscall.Stdout), uintptr(syscall.Stderr)}
+     _, err = syscall.ForkExec(agent_bin, argv, &proca)//agent_bin)
+//     err = syscall.Exec("/Users/kanwisher/projects/errplane/local_agent/local_agent", argv, os.Environ())//agent_bin)
+     if err != nil {
         fmt.Printf("Failed running new version!--%s\n", err)
         panic(err)
     } else {
+        time.Sleep(10 * time.Second)
         fmt.Printf("Upgraded! Now Extiing! \n")
         os.Exit(0)
     }
@@ -246,8 +255,6 @@ func upgrade_version(new_version string, valid_hash string, out_dir string, agen
 
 func checkForUpdatedConfigs(auto_update string, config_url string, api_key string, output_dir string, agent_bin string) {
     for ;;  {
-        fmt.Printf("auto_update-%s\n", auto_update)
-        //TODO monitor go routines, if one exists reload it
         time.Sleep(10 * time.Second)
         fmt.Printf("Waking up to check configuration\n")
 
