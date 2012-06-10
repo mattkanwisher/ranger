@@ -1,2 +1,3 @@
  #!/bin/sh
+echo "postrm"
 exit 0
