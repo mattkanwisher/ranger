@@ -286,7 +286,7 @@ func main() {
 
     var fconfig_file string
     fconfig_file = *config_file
-    if(fconfig_file == "") {
+    if(len(fconfig_file) < 1) {
         fconfig_file = "/etc/errplane.conf"
     }
 
