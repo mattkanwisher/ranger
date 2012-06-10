@@ -13,8 +13,8 @@ go get github.com/kless/goconfig/config
 go get github.com/droundy/goopt
 go build src/local_agent.go
 #cp local_agent packages/deb_pkg/errplane/usr/local/bin/errplane-local-agent
-rm packages/deb_pkg/errplane/usr/local/bin/errplane-local-agent
-cp local_agent packages/deb_pkg/errplane-local-agent-${BUILD_NUMBER}
+rm packages/deb_pkg/errplane/usr/local/errplane/errplane-local-agent*
+cp local_agent packages/deb_pkg/errplane/usr/local/errplane/errplane-local-agent-${BUILD_NUMBER}
 cd packages/deb_pkg
 dpkg --build errplane ./
 cd ..

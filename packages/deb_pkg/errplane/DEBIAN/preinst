@@ -1,2 +1,2 @@
  #!/bin/sh
-ln -s /usr/local/bin/errplane-local-agent  /usr/local/errplane/errplane-local-agent-_BUILD_
+exit 0
