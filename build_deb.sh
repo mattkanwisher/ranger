@@ -6,9 +6,12 @@ GOROOT=/var/lib/jenkins/go
 GOBIN=/var/lib/jenkins/bin
 PATH=$PATH:/var/lib/jenkins/bin
 
+rm -rf output  ; true
+mkdir output
 function do_build() {
-  BUILD_CPU= $1
-  NEW_BUILD_NUMBER=1.0.${BUILD_NUMBER}-${BUILD_CPU}
+  BUILD_CPU=$1
+  NEW_BUILD_NUMBER=1.0.${BUILD_NUMBER}
+  #-${BUILD_CPU}
   rm ./packages/deb_pkg/errplane*.deb
   rm ./packages/deb_pkg/errplane-local-agent*
   #requires gnu sed 
@@ -31,6 +34,6 @@ function do_build() {
   echo "SHA 256 - ${sha}"
 }
 
-do_build amd64
+#do_build amd64
 
 do_build i386
