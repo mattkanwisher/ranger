@@ -26,7 +26,7 @@ function do_build() {
   #cp local_agent packages/deb_pkg/errplane/usr/local/bin/errplane-local-agent
   chmod +x local_agent
   rm packages/deb_pkg/errplane/usr/local/errplane/errplane-local-agent*
-  GOARCH=${BUILD_CPU} GOOS=linux cp local_agent packages/deb_pkg/errplane/usr/local/errplane/errplane-local-agent-${NEW_BUILD_NUMBER}
+  GOARCH=$2 GOOS=linux cp local_agent packages/deb_pkg/errplane/usr/local/errplane/errplane-local-agent-${NEW_BUILD_NUMBER}
   cd packages/deb_pkg
   dpkg --build errplane ./
   cd ../..
@@ -34,6 +34,6 @@ function do_build() {
   echo "SHA 256 - ${sha}"
 }
 
-#do_build amd64
+#do_build amd64 amd64
 
-do_build i386
+do_build i386 386
