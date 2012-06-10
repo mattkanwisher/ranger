@@ -26,6 +26,7 @@ type AgentConfigType struct {
     Id int
     Version string
     Server string
+    Sha256 string
     Configuration_interval int
     Name string
     Organization_id int
@@ -226,7 +227,7 @@ func main() {
     log.Printf("Expected agent version-%s\n", config_data.Version)
 
     if config_data.Version != BUILD_NUMBER {
-        upgrade_version(config_data.Version, "f408a771b8cf02ce9625e6e03e612cf88d677abfbf67c0bbc00abf710c9f7a0b")
+        upgrade_version(config_data.Version, config_data.Sha256)
         os.Exit(1)
     } else {
         os.Exit(1)       
