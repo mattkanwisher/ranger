@@ -1,3 +1,4 @@
+#!/bin/bash
 CONTROL=packages/deb_pkg/errplane/DEBIAN/control 
 CONTROL_POST=packages/deb_pkg/errplane/DEBIAN/postinst 
 VER_SRC=src/local_agent.go
@@ -5,7 +6,7 @@ GOROOT=/var/lib/jenkins/go
 GOBIN=/var/lib/jenkins/bin
 PATH=$PATH:/var/lib/jenkins/bin
 
-func do_build {
+func do_build() {
   BUILD_CPU= $1
   NEW_BUILD_NUMBER=1.0.${BUILD_NUMBER}-${BUILD_CPU}
   rm ./packages/deb_pkg/errplane*.deb
@@ -30,6 +31,6 @@ func do_build {
   echo "SHA 256 - ${sha}"
 }
 
-do_build "amd64"
+do_build amd64
 
-do_build "i386"
+do_build i386
