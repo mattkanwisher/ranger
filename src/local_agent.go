@@ -287,7 +287,7 @@ func main() {
     var fconfig_file string
     fconfig_file = *config_file
 
-    log.Print("Loading config file ", fconfig_file, ".")
+    fmt.Printf("Loading config file ", fconfig_file, ".")
 
     c, _ := config.ReadDefault(fconfig_file)
 //    api_url,_ := c.String("DEFAULT", "api-host")

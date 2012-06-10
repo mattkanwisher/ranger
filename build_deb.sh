@@ -4,10 +4,12 @@ VER_SRC=src/local_agent.go
 GOROOT=/var/lib/jenkins/go
 GOBIN=/var/lib/jenkins/bin
 PATH=$PATH:/var/lib/jenkins/bin
-NEW_BUILD_NUMBER=1.0.${BUILD_NUMBER}
+BUILD_CPU=amd64
+NEW_BUILD_NUMBER=1.0.${BUILD_NUMBER}-${BUILD_CPU}
 rm ./packages/deb_pkg/errplane*.deb
 rm ./packages/deb_pkg/errplane-local-agent*
 #requires gnu sed 
+sed -i "s/_BUILD_/${NEW_BUILD_NUMBER}/g" $CONTROL 
 sed -i "s/_BUILD_/${NEW_BUILD_NUMBER}/g" $CONTROL 
 sed -i "s/_BUILD_/${NEW_BUILD_NUMBER}/g" $CONTROL_POST
 sed -i "s/_BUILD_/${NEW_BUILD_NUMBER}/g" $VER_SRC 
@@ -18,7 +20,7 @@ go build src/local_agent.go
 #cp local_agent packages/deb_pkg/errplane/usr/local/bin/errplane-local-agent
 chmod +x local_agent
 rm packages/deb_pkg/errplane/usr/local/errplane/errplane-local-agent*
-cp local_agent packages/deb_pkg/errplane/usr/local/errplane/errplane-local-agent-${NEW_BUILD_NUMBER}
+GOARCH=${BUILD_CPU} GOOS=linux cp local_agent packages/deb_pkg/errplane/usr/local/errplane/errplane-local-agent-${NEW_BUILD_NUMBER}
 cd packages/deb_pkg
 dpkg --build errplane ./
 cd ../..

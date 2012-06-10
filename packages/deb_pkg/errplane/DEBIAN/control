@@ -2,7 +2,7 @@ Package: errplane
 Version: _BUILD_
 Section: base 
 Priority: optional 
-Architecture: amd64 
+Architecture: _OS_ 
 Depends: bash 
 Maintainer: support@errplane.com 
 Description: ErrPlane Local agent 
