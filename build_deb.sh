@@ -20,6 +20,6 @@ rm packages/deb_pkg/errplane/usr/local/errplane/errplane-local-agent*
 cp local_agent packages/deb_pkg/errplane/usr/local/errplane/errplane-local-agent-${BUILD_NUMBER}
 cd packages/deb_pkg
 dpkg --build errplane ./
-cd ..
+cd ../..
 sha=`shasum -a 256 local_agent`
 echo "SHA 256 - ${sha}"
