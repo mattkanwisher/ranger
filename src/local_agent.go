@@ -272,7 +272,7 @@ func checkForUpdatedConfigs(auto_update string, config_url string, api_key strin
 
 }
 
-var config_file = goopt.String([]string{"-c", "--config"}, "", "config file")
+var config_file = goopt.String([]string{"-c", "--config"}, "/etc/errplane.conf", "config file")
 
 func main() {
     fmt.Printf("ERRPlane Local Agent starting, Version %s \n", BUILD_NUMBER)
@@ -286,11 +286,8 @@ func main() {
 
     var fconfig_file string
     fconfig_file = *config_file
-    if(len(fconfig_file) < 1) {
-        fconfig_file = "/etc/errplane.conf"
-    }
 
-    log.Print("Loading config file ", *config_file, ".")
+    log.Print("Loading config file ", fconfig_file, ".")
 
     c, _ := config.ReadDefault(fconfig_file)
 //    api_url,_ := c.String("DEFAULT", "api-host")
