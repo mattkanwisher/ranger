@@ -15,9 +15,11 @@ go get github.com/kless/goconfig/config
 go get github.com/droundy/goopt
 go build src/local_agent.go
 #cp local_agent packages/deb_pkg/errplane/usr/local/bin/errplane-local-agent
+chmod +x local_agent
 rm packages/deb_pkg/errplane/usr/local/errplane/errplane-local-agent*
 cp local_agent packages/deb_pkg/errplane/usr/local/errplane/errplane-local-agent-${BUILD_NUMBER}
 cd packages/deb_pkg
 dpkg --build errplane ./
 cd ..
-
+sha=`sha256  local_agent`
+echo "SHA 256 - ${sha}"
