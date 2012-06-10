@@ -168,7 +168,7 @@ func parseJsonFromHttp(api_url string, api_key string) AgentConfigType {
 func upgrade_version(new_version string, valid_hash string, out_dir string, agent_bin string) {
    log.Printf("Upgrading to current version %s from version %s.\n", new_version, BUILD_NUMBER)
 
-    download_file_url := fmt.Sprintf(DOWNLOAD_LOCATION, "26")//new_version)
+    download_file_url := fmt.Sprintf(DOWNLOAD_LOCATION, new_version)
     log.Printf("download_file %s\n", download_file_url)
     resp, err := http.Get(download_file_url)
     if err != nil {
