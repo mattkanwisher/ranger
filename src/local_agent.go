@@ -254,7 +254,7 @@ func main() {
     var fconfig_file string
     fconfig_file = *config_file
     if(fconfig_file == "") {
-        fconfig_file = "samples/sample_base_config"
+        fconfig_file = "/etc/errplane.conf"
     }
 
     log.Print("Loading config file ", *config_file, ".")
