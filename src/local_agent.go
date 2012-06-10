@@ -18,36 +18,6 @@ import "github.com/droundy/goopt"
 import "strings"
 
 var BUILD_NUMBER = "1.0._BUILD_"
-/*
-{
-configuration_interval: 30,
-created_at: "2012-05-30T20:51:43Z",
-id: 1,
-name: null,
-organization_id: 1,
-server: "fasdsdfdasd",
-updated_at: "2012-05-30T20:51:43Z",
-version: "1.0.99",
-agent_logs: [
-  {
-    agent_id: 1,
-    created_at: "2012-05-30T20:59:01Z",
-    id: 1,
-    log_id: 2,
-    updated_at: "2012-05-30T20:59:01Z",
-    log: {
-      created_at: "2012-05-30T20:56:20Z",
-      id: 2,
-      log_type_id: null,
-      name: "apache",
-      organization_id: 1,
-      path: "/var/log/apache/access.log",
-      updated_at: "2012-05-30T20:56:33Z"
-    }
-  }
- ]
-}
-*/
 
 type AgentConfigType struct {
     Id int
@@ -91,8 +61,31 @@ func postData(api_key string, api_server string, data string, log_filename strin
 }
 
 
-func getProcessStats() {
-    //top -n1 -b
+func getSysStats() {
+    fmt.Printf("in read data !")
+    myos :=  runtime.GOOS
+
+    var cmd *exec.Cmd
+    // OSX
+    if myos == "darwin" {
+     cmd = exec.Command("top", "-l", "1")
+    } else {
+      // LINUX
+      cmd = exec.Command("top", "-n1", "-b")
+    }
+
+    stdout, err := cmd.StdoutPipe()
+    if err != nil {
+        log.Fatal(err)
+    }
+    if err := cmd.Start(); err != nil {
+        log.Fatal(err)
+    }
+
+    err  = nil
+    contents,_ := ioutil.ReadAll(stdout)
+
+    log.Printf("top output -%s\n\n========\n%s\n", contents, myos)
 }
 
 func readData(api_key, api_server, filename string) {
@@ -194,6 +187,9 @@ func main() {
     api_key,_ := c.String("DEFAULT", "api-key")
     fmt.Printf("----%s-%s--\n", config_url, api_key)
 
+    if api_url == "123"  {
+
+    }
 
     parseJsonFromHttp(config_url, api_key)
 
@@ -203,10 +199,12 @@ func main() {
 //        exit(1)
     }
 
-    filename := "test_logs/test_log.log"
-    go readData(api_key, api_url, filename)
-    filename2 := "test_logs/test_log2.log"
-    go readData(api_key, api_url, filename2)
+ //   filename := "test_logs/test_log.log"
+ //   go readData(api_key, api_url, filename)
+ //   filename2 := "test_logs/test_log2.log"
+//    go readData(api_key, api_url, filename2)
+
+    go getSysStats()
 
     if err != nil {
         log.Fatal(err)
