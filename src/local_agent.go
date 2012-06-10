@@ -16,8 +16,11 @@ import "os"
 import "io/ioutil"
 import "github.com/droundy/goopt"
 import "strings"
+import "crypto/sha256" 
+import "hash"
 
 var BUILD_NUMBER = "1.0._BUILD_"
+var DOWNLOAD_LOCATION = "http://download.errplane.com/errplane-local-agent-%s"
 
 type AgentConfigType struct {
     Id int
@@ -131,7 +134,7 @@ func parseJsonFromFile() {
 }
 */
 //TODO: IF this fails  read from disk, if that fails sleep until the server is back online
-func parseJsonFromHttp(api_url string, api_key string) {
+func parseJsonFromHttp(api_url string, api_key string) AgentConfigType {
     server := "TEST"
     full_config_url := fmt.Sprintf(api_url + "/api/v1/agents/%s/config?api_key=%s", server, api_key)
     log.Printf("api url %s\n", full_config_url)
@@ -140,7 +143,6 @@ func parseJsonFromHttp(api_url string, api_key string) {
         // handle error
         fmt.Printf("error getting config data-%s\n",err)    
         os.Exit(1)
-        return
     }
 
     defer resp.Body.Close()
@@ -155,10 +157,42 @@ func parseJsonFromHttp(api_url string, api_key string) {
         // handle error
         fmt.Printf("error parsing config data-%s\n",err)    
         os.Exit(1)
-        return
     }
 
     fmt.Printf("Results: %v\n", jsontype)    
+    return jsontype
+}
+
+func upgrade_version(new_version string, valid_hash string) {
+   log.Printf("Upgrading to current version %s from version %s.\n", new_version, BUILD_NUMBER)
+
+    download_file_url := fmt.Sprintf(DOWNLOAD_LOCATION, "26")//new_version)
+    log.Printf("download_file %s\n", download_file_url)
+    resp, err := http.Get(download_file_url)
+    if err != nil {
+        // handle error
+        fmt.Printf("error getting config data-%s\n",err)    
+        os.Exit(1)
+    }
+    if resp.StatusCode != 200 {
+        // handle error
+        fmt.Printf("Recieved a bad http code downloading %d-\n", resp.StatusCode)    
+        os.Exit(1)
+    }
+
+    defer resp.Body.Close()
+    download_file, err := ioutil.ReadAll(resp.Body)
+    var h hash.Hash = sha256.New()
+    h.Write(download_file)
+    hash_code := fmt.Sprintf("%x", h.Sum([]byte{}))
+    fmt.Printf("downloaded file with hash of %s\n", hash_code)
+
+    if( hash_code == valid_hash) {
+        fmt.Printf("Sweet valid file downloaded!")
+    } else {
+        fmt.Printf("invalid hash!")
+        os.Exit(1)
+    }
 }
 
 var config_file = goopt.String([]string{"-c", "--config"}, "", "config file")
@@ -187,11 +221,21 @@ func main() {
     api_key,_ := c.String("DEFAULT", "api-key")
     fmt.Printf("----%s-%s--\n", config_url, api_key)
 
-    if api_url == "123"  {
+    config_data := parseJsonFromHttp(config_url, api_key)
+
+    log.Printf("Expected agent version-%s\n", config_data.Version)
+
+    if config_data.Version != BUILD_NUMBER {
+        upgrade_version(config_data.Version, "f408a771b8cf02ce9625e6e03e612cf88d677abfbf67c0bbc00abf710c9f7a0b")
+        os.Exit(1)
+    } else {
+        os.Exit(1)       
+    }
+
+    if api_url == "123" {
 
     }
 
-    parseJsonFromHttp(config_url, api_key)
 
     _, err := exec.LookPath("tail")
     if err != nil {
