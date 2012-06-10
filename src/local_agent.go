@@ -18,8 +18,9 @@ import "github.com/droundy/goopt"
 import "strings"
 import "crypto/sha256" 
 import "hash"
+import "strconv"
 
-var BUILD_NUMBER = "1.0._BUILD_"
+var BUILD_NUMBER = "_BUILD_"
 var DOWNLOAD_LOCATION = "http://download.errplane.com/errplane-local-agent-%s"
 var OUTPUT_FILE_FORMAT = "errplane-local-agent-%s"
 var cmd *exec.Cmd
@@ -165,6 +166,14 @@ func parseJsonFromHttp(api_url string, api_key string) AgentConfigType {
     return jsontype
 }
 
+func write_pid(pid_location string) {
+   i := os.Getpid()
+   pid := strconv.Itoa(i)
+   log.Printf("Writting pid to %s\n", pid_location)
+   os.Remove(pid_location)
+   ioutil.WriteFile(pid_location, []byte(pid), 0644)
+}
+
 func upgrade_version(new_version string, valid_hash string, out_dir string, agent_bin string) {
    log.Printf("Upgrading to current version %s from version %s.\n", new_version, BUILD_NUMBER)
 
@@ -269,19 +278,23 @@ func main() {
     if(len(agent_bin) < 1) {
        agent_bin =  "/usr/local/bin/errplane-local-agent"
     }
+    pid_location,_ := c.String("DEFAULT", "pid_file")
+    if(len(pid_location) < 1) {
+        pid_location =  "/var/run/errplane/errplane.pid"
+    }
+    auto_update,_ := c.String("DEFAULT", "auto_upgrade")
 
-
-    fmt.Printf("----%s-%s-%s-\n", config_url, api_key, agent_bin)
+    write_pid(pid_location)
 
     config_data := parseJsonFromHttp(config_url, api_key)
 
     log.Printf("Expected agent version-%s\n", config_data.Version)
 
-    if config_data.Version != BUILD_NUMBER {
+    if auto_update == "true" && config_data.Version != BUILD_NUMBER {
         upgrade_version(config_data.Version, config_data.Sha256, output_dir, agent_bin)
         os.Exit(1)
     } else {
-        os.Exit(1)       
+        log.Printf("Don't need to upgrade versions\n")
     }
 
     if api_url == "123" {
