@@ -198,13 +198,11 @@ func upgrade_version(new_version string, valid_hash string, out_dir string, agen
 
     out_file := fmt.Sprintf(OUTPUT_FILE_FORMAT, new_version)
     out_location := out_dir + out_file
-    fo, err := os.Create(out_location)
-    if err != nil { panic(err) }
-    defer fo.Close()
 
-    if _, err := fo.Write(download_file); err != nil {
-        panic(err)
-    } 
+
+    err = ioutil.WriteFile(out_location, download_file, 0744)
+    if err != nil { panic(err) }
+
     fmt.Printf("Finished writing file!\n")
 
     //ignore errors
