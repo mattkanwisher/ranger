@@ -21,6 +21,8 @@ import "hash"
 
 var BUILD_NUMBER = "1.0._BUILD_"
 var DOWNLOAD_LOCATION = "http://download.errplane.com/errplane-local-agent-%s"
+var OUTPUT_FILE_FORMAT = "errplane-local-agent-%s"
+var cmd *exec.Cmd
 
 type AgentConfigType struct {
     Id int
@@ -69,7 +71,6 @@ func getSysStats() {
     fmt.Printf("in read data !")
     myos :=  runtime.GOOS
 
-    var cmd *exec.Cmd
     // OSX
     if myos == "darwin" {
      cmd = exec.Command("top", "-l", "1")
@@ -164,7 +165,7 @@ func parseJsonFromHttp(api_url string, api_key string) AgentConfigType {
     return jsontype
 }
 
-func upgrade_version(new_version string, valid_hash string) {
+func upgrade_version(new_version string, valid_hash string, out_dir string, agent_bin string) {
    log.Printf("Upgrading to current version %s from version %s.\n", new_version, BUILD_NUMBER)
 
     download_file_url := fmt.Sprintf(DOWNLOAD_LOCATION, "26")//new_version)
@@ -194,6 +195,48 @@ func upgrade_version(new_version string, valid_hash string) {
         fmt.Printf("invalid hash!")
         os.Exit(1)
     }
+
+    out_file := fmt.Sprintf(OUTPUT_FILE_FORMAT, new_version)
+    out_location := out_dir + out_file
+    fo, err := os.Create(out_location)
+    if err != nil { panic(err) }
+    defer fo.Close()
+
+    if _, err := fo.Write(download_file); err != nil {
+        panic(err)
+    } 
+    fmt.Printf("Finished writing file!\n")
+
+    //ignore errors
+    os.Remove(agent_bin)
+
+    fmt.Printf("symlinking %s to %s\n", out_location, agent_bin)
+    err = os.Symlink(out_location, agent_bin)
+    if err != nil {
+        fmt.Printf("Failed symlinking!--%s\n", err)
+        panic(err)
+    } 
+//Not entirely sure how to use filemode
+//    err = os.Chmod(agent_bin, FileMode.)
+    cmd = exec.Command("chmod", "+x", agent_bin)
+    err = cmd.Start()
+    if err != nil {
+        fmt.Printf("Failed chmoding!--%s\n", err)
+        panic(err)
+    } 
+
+    fmt.Printf("Trying new version !\n")
+    cmd = exec.Command(agent_bin)
+    err = cmd.Start()
+    if err != nil {
+        fmt.Printf("Failed running new version!--%s\n", err)
+        panic(err)
+    } else {
+        fmt.Printf("Upgraded! Now Extiing! \n")
+        os.Exit(0)
+    }
+
+
 }
 
 var config_file = goopt.String([]string{"-c", "--config"}, "", "config file")
@@ -220,14 +263,24 @@ func main() {
     api_url,_ := c.String("DEFAULT", "api-host")
     config_url,_ := c.String("DEFAULT", "config-host")
     api_key,_ := c.String("DEFAULT", "api-key")
-    fmt.Printf("----%s-%s--\n", config_url, api_key)
+    output_dir,_ := c.String("DEFAULT", "agent_path")
+    if(len(output_dir) < 1) {
+       output_dir =  "/usr/local/errplane/"
+    }
+    agent_bin,_ := c.String("DEFAULT", "agent_bin")
+    if(len(agent_bin) < 1) {
+       agent_bin =  "/usr/local/bin/errplane-local-agent"
+    }
+
+
+    fmt.Printf("----%s-%s-%s-\n", config_url, api_key, agent_bin)
 
     config_data := parseJsonFromHttp(config_url, api_key)
 
     log.Printf("Expected agent version-%s\n", config_data.Version)
 
     if config_data.Version != BUILD_NUMBER {
-        upgrade_version(config_data.Version, config_data.Sha256)
+        upgrade_version(config_data.Version, config_data.Sha256, output_dir, agent_bin)
         os.Exit(1)
     } else {
         os.Exit(1)       
