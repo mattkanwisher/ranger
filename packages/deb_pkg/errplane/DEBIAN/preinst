@@ -1,3 +1,3 @@
- #!/bin/sh
+#!/bin/bash
 echo "preinst"
 exit 0

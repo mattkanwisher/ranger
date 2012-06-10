@@ -1,3 +1,3 @@
- #!/bin/sh
- echo "postinst"
+#!/bin/bash
+echo "postinst"
 ln -s /usr/local/bin/errplane-local-agent  /usr/local/errplane/errplane-local-agent-_BUILD_
