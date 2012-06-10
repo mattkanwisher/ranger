@@ -19,7 +19,7 @@ import "strings"
 import "crypto/sha256" 
 import "hash"
 import "strconv"
-import "syscall"
+//import "syscall"
 
 var BUILD_NUMBER = "_BUILD_"
 //var BUILD_NUMBER = "1.0.50"
@@ -235,12 +235,14 @@ func upgrade_version(new_version string, valid_hash string, out_dir string, agen
 //    agent_bin  = "/Users/kanwisher/projects/errplane/local_agent/local_agent"
 //    cmd = exec.Command(agent_bin, "-c", "/Users/kanwisher/projects/errplane/local_agent/config/prod_errplane2.conf" )
 //    err = cmd.Start()
-    argv := []string {"local_agent"} //, "-c", "/Users/kanwisher/projects/errplane/local_agent/config/prod_errplane2.conf"}
-    var proca syscall.ProcAttr
-    proca.Env = os.Environ()
-    proca.Files =  []uintptr{uintptr(syscall.Stdout), uintptr(syscall.Stderr)}
-     _, err = syscall.ForkExec(agent_bin, argv, &proca)//agent_bin)
+    //argv := []string {"local_agent"} //, "-c", "/Users/kanwisher/projects/errplane/local_agent/config/prod_errplane2.conf"}
+    //var proca syscall.ProcAttr
+    //proca.Env = os.Environ()
+    //proca.Files =  []uintptr{uintptr(syscall.Stdout), uintptr(syscall.Stderr)}
+//     _, err = syscall.ForkExec(agent_bin, argv, &proca)//agent_bin)
 //     err = syscall.Exec("/Users/kanwisher/projects/errplane/local_agent/local_agent", argv, os.Environ())//agent_bin)
+    //TODO FOR NOW WE JUST EXIT AFTER UPGRADE AND LET MONIT RESTART US, UGH HAVE TO FIGURE OUT THIS FORKEXEC BS
+    err = nil
      if err != nil {
         fmt.Printf("Failed running new version!--%s\n", err)
         panic(err)
@@ -290,7 +292,7 @@ func main() {
     fmt.Printf("Loading config file ", fconfig_file, ".")
 
     c, _ := config.ReadDefault(fconfig_file)
-//    api_url,_ := c.String("DEFAULT", "api-host")
+    api_url,_ := c.String("DEFAULT", "api-host")
     config_url,_ := c.String("DEFAULT", "config_host")
     api_key,_ := c.String("DEFAULT", "api_key")
     output_dir,_ := c.String("DEFAULT", "agent_path")
@@ -330,10 +332,9 @@ func main() {
 
     go checkForUpdatedConfigs(auto_update, config_url, api_key, output_dir, agent_bin)
 
- //   filename := "test_logs/test_log.log"
- //   go readData(api_key, api_url, filename)
- //   filename2 := "test_logs/test_log2.log"
-//    go readData(api_key, api_url, filename2)
+    for _,alog := range config_data.Agent_logs { 
+        go readData(api_key, api_url, alog.Log.Path)
+    }
 
     go getSysStats()
 
