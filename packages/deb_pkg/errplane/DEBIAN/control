@@ -1,5 +1,5 @@
 Package: errplane 
-Version: 1.0._BUILD_
+Version: _BUILD_
 Section: base 
 Priority: optional 
 Architecture: amd64 

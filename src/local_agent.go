@@ -21,8 +21,8 @@ import "hash"
 import "strconv"
 import "syscall"
 
-//var BUILD_NUMBER = "_BUILD_"
-var BUILD_NUMBER = "1.0.50"
+var BUILD_NUMBER = "_BUILD_"
+//var BUILD_NUMBER = "1.0.50"
 var DOWNLOAD_LOCATION = "http://download.errplane.com/errplane-local-agent-%s"
 var OUTPUT_FILE_FORMAT = "errplane-local-agent-%s"
 var cmd *exec.Cmd
