@@ -20,6 +20,7 @@ import "crypto/sha256"
 import "hash"
 import "strconv"
 //import "syscall"
+import "net/url"
 
 var BUILD_NUMBER = "_BUILD_"
 //var BUILD_NUMBER = "1.0.50"
@@ -56,14 +57,13 @@ type LogType struct {
 }
 
 
-func postData(api_key string, api_server string, data string, log_filename string) {
-    SERVER_NAME := "bobs_server"
-    log_id := 123
+func postData(api_key string, api_server string, data string, log_filename string, log_id int) {
+    server_name, _ := os.Hostname() 
 //    contents,_ := ioutil.ReadAll(data);
 //	buf := bytes.NewBuffer("your string")
 	buf2 := bytes.NewBufferString(data)
     //TODO url escaping
-    url := fmt.Sprintf("http://%s/api/v1/logs/%s/agents/%s?api_key=%s", api_server, log_id, SERVER_NAME, api_key)
+    url := fmt.Sprintf("%s/api/v1/logs/%d/agents/%s?api_key=%s", api_server, log_id, url.QueryEscape(server_name), api_key)
     fmt.Printf("posting to url -%s\n%s\n", url,buf2)
     http.Post(url, "application/text", buf2)
 //TODO HANDLE ERROR AND RETRIES!
@@ -96,7 +96,7 @@ func getSysStats() {
     log.Printf("top output -%s\n\n========\n%s\n", contents, myos)
 }
 
-func readData(api_key, api_server, filename string) {
+func readData(api_key, api_server, filename string, log_id int) {
     fmt.Printf("in read data !")
     cmd := exec.Command("tail", "-f", filename)
     stdout, err := cmd.StdoutPipe()
@@ -118,7 +118,7 @@ func readData(api_key, api_server, filename string) {
         lines += 1
         if(lines > 5 ) { //|| time > 1 min) {
             fmt.Printf("Clearing buffer and posting to http\n")
-            postData(api_key, api_server, sbuffer, filename)
+            postData(api_key, api_server, sbuffer, filename, log_id)
             sbuffer = ""
             lines = 0
         }
@@ -140,8 +140,8 @@ func parseJsonFromFile() {
 */
 //TODO: IF this fails  read from disk, if that fails sleep until the server is back online
 func parseJsonFromHttp(api_url string, api_key string) AgentConfigType {
-    server := "TEST"
-    full_config_url := fmt.Sprintf(api_url + "/api/v1/agents/%s/config?api_key=%s", server, api_key)
+    server, _ := os.Hostname() 
+    full_config_url := fmt.Sprintf(api_url + "/api/v1/agents/%s/config?api_key=%s", url.QueryEscape(server), api_key)
     fmt.Printf("api url %s\n", full_config_url)
     resp, err := http.Get(full_config_url)
     if err != nil {
@@ -257,7 +257,7 @@ func upgrade_version(new_version string, valid_hash string, out_dir string, agen
 
 func checkForUpdatedConfigs(auto_update string, config_url string, api_key string, output_dir string, agent_bin string) {
     for ;;  {
-        time.Sleep(10 * time.Second)
+        time.Sleep(60 * time.Second)
         fmt.Printf("Waking up to check configuration\n")
 
         config_data := parseJsonFromHttp(config_url, api_key)
@@ -292,7 +292,7 @@ func main() {
     fmt.Printf("Loading config file ", fconfig_file, ".")
 
     c, _ := config.ReadDefault(fconfig_file)
-    api_url,_ := c.String("DEFAULT", "api-host")
+    api_url,_ := c.String("DEFAULT", "api_host")
     config_url,_ := c.String("DEFAULT", "config_host")
     api_key,_ := c.String("DEFAULT", "api_key")
     output_dir,_ := c.String("DEFAULT", "agent_path")
@@ -333,7 +333,7 @@ func main() {
     go checkForUpdatedConfigs(auto_update, config_url, api_key, output_dir, agent_bin)
 
     for _,alog := range config_data.Agent_logs { 
-        go readData(api_key, api_url, alog.Log.Path)
+        go readData(api_key, api_url, alog.Log.Path, alog.Log.Id)
     }
 
     go getSysStats()
