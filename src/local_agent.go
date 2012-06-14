@@ -56,14 +56,20 @@ type LogType struct {
     Created_at string
 }
 
+type LogTuple struct { 
+   Log_id int; 
+   Data string; 
+} 
 
-func postData(api_key string, api_server string, data string, log_filename string, log_id int) {
+
+
+func postData(api_key string, api_url string, data string, log_id int) {
     server_name, _ := os.Hostname() 
 //    contents,_ := ioutil.ReadAll(data);
 //	buf := bytes.NewBuffer("your string")
 	buf2 := bytes.NewBufferString(data)
     //TODO url escaping
-    url := fmt.Sprintf("%s/api/v1/logs/%d/agents/%s?api_key=%s", api_server, log_id, url.QueryEscape(server_name), api_key)
+    url := fmt.Sprintf("%s/api/v1/logs/%d/agents/%s?api_key=%s", api_url, log_id, url.QueryEscape(server_name), api_key)
     fmt.Printf("posting to url -%s\n%s\n", url,buf2)
     http.Post(url, "application/text", buf2)
 //TODO HANDLE ERROR AND RETRIES!
@@ -97,7 +103,7 @@ func getSysStats() {
     log.Printf("top output -%s\n\n========\n%s\n", contents, myos)
 }
 
-func readData(api_key, api_server, filename string, log_id int) {
+func readLogData(filename string, log_id int, logOutputChan chan<- *LogTuple) {
     fmt.Printf("in read data !")
     cmd := exec.Command("tail", "-f", filename)
     stdout, err := cmd.StdoutPipe()
@@ -119,7 +125,7 @@ func readData(api_key, api_server, filename string, log_id int) {
         lines += 1
         if(lines > 5 ) { //|| time > 1 min) {
             fmt.Printf("Clearing buffer and posting to http\n")
-            postData(api_key, api_server, sbuffer, filename, log_id)
+            logOutputChan <- &LogTuple{ log_id, sbuffer}
             sbuffer = ""
             lines = 0
         }
@@ -127,6 +133,9 @@ func readData(api_key, api_server, filename string, log_id int) {
             log.Fatal(err)
         }
     }
+
+    //TODO if the go routine exits it needs to tell the brain
+    //SetFinalizer
 }
 /*
 func parseJsonFromFile() {
@@ -256,14 +265,44 @@ func upgrade_version(new_version string, valid_hash string, out_dir string, agen
 
 }
 
-func theBrain( in <-chan *AgentConfigType, logOutputChan chan<- *string, api_key string, api_url string) {
+
+func dataPosting(logOutputChan <-chan *LogTuple, api_key string, api_url string) {
+    for ;; {
+        log.Printf("Waiting for log or config data or timeouts")
+        log_tup := <-logOutputChan
+        log.Printf("Writing log data to the server")
+        postData(api_key, api_url, log_tup.Data, log_tup.Log_id)
+    }
+}
+
+func theBrain( in <-chan *AgentConfigType, api_key string, api_url string) {
+    runningGoR := make(map[string]bool)
+
+
+    logOutputChan := make(chan *LogTuple)
+
+    //Setup go routine for Data posting
+    go dataPosting(logOutputChan, api_key, api_url)
+    runningGoR["SYSTEM_DATA_POST"] = true
+
+    //TODO for now always run system stats go routine
+    go getSysStats()
+    runningGoR["SYSTEM_STATS"] = true
+
+
+
     for ;; {
         log.Printf("Waiting for config data")
         config_data := <-in
         log.Printf("Recieved for config data")
         for _,alog := range config_data.Agent_logs { 
-           go readData(api_key, api_url, alog.Log.Path, alog.Log.Id)
-           log.Printf("Launched go routine\n")
+           if( runningGoR[alog.Log.Path] == true) {
+                log.Printf("Sweet go routine is already running\n")
+           } else {
+               go readLogData(alog.Log.Path, alog.Log.Id, logOutputChan)
+               runningGoR[alog.Log.Path] = true
+               log.Printf("Launched go routine\n")
+            }
         }
     }
 }
@@ -284,7 +323,7 @@ func checkForUpdatedConfigs(auto_update string, config_url string, api_key strin
         } else {
             log.Printf("Don't need to upgrade versions\n")
         }
-        time.Sleep(60 * time.Second)
+        time.Sleep(10 * time.Second)
     }
 
 }
@@ -346,14 +385,10 @@ func main() {
     }
 
     configChan := make(chan *AgentConfigType)
-    logOutputChan := make(chan *string)
 
-
-    go theBrain(configChan, logOutputChan, api_key, api_url)
+    go theBrain(configChan, api_key, api_url)
 
     go checkForUpdatedConfigs(auto_update, config_url, api_key, output_dir, agent_bin, configChan)
-
-    go getSysStats()
 
     if err != nil {
         log.Fatal(err)
