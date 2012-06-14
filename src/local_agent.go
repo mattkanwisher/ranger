@@ -265,13 +265,24 @@ func upgrade_version(new_version string, valid_hash string, out_dir string, agen
 
 }
 
-
+//TODO get the poll interval from the brain
 func dataPosting(logOutputChan <-chan *LogTuple, api_key string, api_url string) {
-    for ;; {
-        log.Printf("Waiting for log or config data or timeouts")
-        log_tup := <-logOutputChan
-        log.Printf("Writing log data to the server")
-        postData(api_key, api_url, log_tup.Data, log_tup.Log_id)
+    statusInterval := 1 * time.Second //Default it and let the brain update it later
+    ticker := time.NewTicker(statusInterval)
+    buffer := make(map[int]string)
+    for {
+      select {
+      case <-ticker.C:
+        log.Printf("Posting timeout, lets clear the buffer!")
+        for lid,data := range buffer {
+            if( len(data) > 0) {
+                postData(api_key, api_url, data, lid)
+                buffer[lid] = ""
+            }
+        }
+      case log_tup := <-logOutputChan:
+          buffer[log_tup.Log_id] += log_tup.Data
+      }
     }
 }
 
@@ -293,6 +304,7 @@ func theBrain( in <-chan *AgentConfigType, api_key string, api_url string) {
 
     for ;; {
         log.Printf("Waiting for config data")
+        //TODO LOOK FOR DEATH OF GOROUTINES AND RESPAWN THEM
         config_data := <-in
         log.Printf("Recieved for config data")
         for _,alog := range config_data.Agent_logs { 
