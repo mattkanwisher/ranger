@@ -71,6 +71,7 @@ func postData(api_key string, api_server string, data string, log_filename strin
 
 
 func getSysStats() {
+    return;
     fmt.Printf("in read data !")
     myos :=  runtime.GOOS
 
@@ -140,7 +141,7 @@ func parseJsonFromFile() {
 */
 //TODO: IF this fails  read from disk, if that fails sleep until the server is back online
 func parseJsonFromHttp(api_url string, api_key string) AgentConfigType {
-    server, _ := os.Hostname() 
+    server:= "TEST" // os.Hostname() 
     full_config_url := fmt.Sprintf(api_url + "/api/v1/agents/%s/config?api_key=%s", url.QueryEscape(server), api_key)
     fmt.Printf("api url %s\n", full_config_url)
     resp, err := http.Get(full_config_url)
@@ -255,12 +256,25 @@ func upgrade_version(new_version string, valid_hash string, out_dir string, agen
 
 }
 
-func checkForUpdatedConfigs(auto_update string, config_url string, api_key string, output_dir string, agent_bin string) {
+func theBrain( in <-chan *AgentConfigType, logOutputChan chan<- *string, api_key string, api_url string) {
+    for ;; {
+        log.Printf("Waiting for config data")
+        config_data := <-in
+        log.Printf("Recieved for config data")
+        for _,alog := range config_data.Agent_logs { 
+           go readData(api_key, api_url, alog.Log.Path, alog.Log.Id)
+           log.Printf("Launched go routine\n")
+        }
+    }
+}
+
+
+func checkForUpdatedConfigs(auto_update string, config_url string, api_key string, output_dir string, agent_bin string, out chan<- *AgentConfigType) {
     for ;;  {
-        time.Sleep(60 * time.Second)
         fmt.Printf("Waking up to check configuration\n")
 
         config_data := parseJsonFromHttp(config_url, api_key)
+        out <- &config_data
 
         log.Printf("Expected agent version-%s\n", config_data.Version)
 
@@ -270,6 +284,7 @@ func checkForUpdatedConfigs(auto_update string, config_url string, api_key strin
         } else {
             log.Printf("Don't need to upgrade versions\n")
         }
+        time.Sleep(60 * time.Second)
     }
 
 }
@@ -330,11 +345,13 @@ func main() {
 //        exit(1)
     }
 
-    go checkForUpdatedConfigs(auto_update, config_url, api_key, output_dir, agent_bin)
+    configChan := make(chan *AgentConfigType)
+    logOutputChan := make(chan *string)
 
-    for _,alog := range config_data.Agent_logs { 
-        go readData(api_key, api_url, alog.Log.Path, alog.Log.Id)
-    }
+
+    go theBrain(configChan, logOutputChan, api_key, api_url)
+
+    go checkForUpdatedConfigs(auto_update, config_url, api_key, output_dir, agent_bin, configChan)
 
     go getSysStats()
 
