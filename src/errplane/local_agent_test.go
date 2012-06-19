@@ -14,3 +14,23 @@ func Test_Pid(t *testing.T) { //test function starts with "Test" and takes a poi
     }
 
 }
+
+
+
+func Test_FileSystemParse(t *testing.T) {
+// df -m
+  dfm := `Filesystem           1M-blocks      Used Available Use% Mounted on
+/dev/xvda1                8064      6402      1253  84% /
+udev                       849         1       849   1% /dev
+tmpfs                      342         1       342   1% /run
+none                         5         0         5   0% /run/lock
+none                       854         0       854   0% /run/shm
+/dev/xvda2              342668       328    324934   1% /mnt
+`
+  res := parseDriveStats(dfm)
+  if(res[0].Name == "log_id") {
+   t.Log("one test passed.")
+  } else {
+    t.Error("Test df parse  did not work as expected.") 
+  } 
+}

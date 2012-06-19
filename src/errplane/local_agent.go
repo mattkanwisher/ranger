@@ -68,6 +68,10 @@ type LogTuple struct {
    Data string; 
 } 
 
+type EStat struct {
+    Name string;
+    Val int;
+}
 
 
 func postData(api_key string, api_url string, data string, log_id int) {
@@ -80,6 +84,12 @@ func postData(api_key string, api_url string, data string, log_id int) {
     fmt.Printf("posting to url -%s\n%s\n", url,buf2)
     http.Post(url, "application/text", buf2)
 //TODO HANDLE ERROR AND RETRIES!
+}
+
+func parseDriveStats(data string) []EStat {
+   var out  []EStat
+   out = append(out, EStat{ "log_id", 123})
+   return out
 }
 
 
@@ -154,6 +164,8 @@ func parseJsonFromFile() {
     fmt.Printf("%s\n", string(file))
 
 }
+
+
 */
 //TODO: IF this fails  read from disk, if that fails sleep until the server is back online
 func parseJsonFromHttp(api_url string, api_key string) AgentConfigType {
