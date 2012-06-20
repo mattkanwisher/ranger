@@ -1,4 +1,5 @@
 require "rubygems"
+require "#{File.dirname(__FILE__)}/j_unit.rb"
 require "net/http"
 require "yajl"
 require "yajl/json_gem"
