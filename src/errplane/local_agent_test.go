@@ -19,18 +19,51 @@ func Test_Pid(t *testing.T) { //test function starts with "Test" and takes a poi
 
 func Test_FileSystemParse(t *testing.T) {
 // df -m
-  dfm := `Filesystem           1M-blocks      Used Available Use% Mounted on
-/dev/xvda1                8064      6402      1253  84% /
-udev                       849         1       849   1% /dev
-tmpfs                      342         1       342   1% /run
-none                         5         0         5   0% /run/lock
-none                       854         0       854   0% /run/shm
-/dev/xvda2              342668       328    324934   1% /mnt
-`
+  /*
+  dfm := `380516 301244 79021 79% /
+0 0 0 100% /dev
+95300 47736 47563 50% /Volumes/BOOTCAMP
+0 0 0 100% /net
+0 0 0 100% /home
+8063 6439 1213 84% /Volumes/lcsdomain.eikonswift.com`
+*/
+  dfm := `8064 6440 1215 85% /
+829 1 829 1% /dev
+334 1 334 1% /run
+5 0 5 0% /run/lock
+834 0 834 0% /run/shm
+150293 188 142471 1% /mnt`
+
   res := parseDriveStats(dfm)
-  if(res[0].Name == "log_id") {
+  t.Log("got data back %x\n", res)
+  if(res[0].Group == "/") && (res[0].Name == "1M-blocks") && (res[0].Val == 127) {
+   t.Log("one test passed.")
+  } else {
+    t.Log(res[0])
+    t.Error("Test df parse  did not work as expected." ) 
+  } 
+
+  if(res[1].Group == "/") && (res[1].Name == "AvailablePer") && (res[1].Val == 85) {
+   t.Log("one test passed.")
+  } else {
+    t.Error("Test df parse  did not work as expected.") 
+  } 
+
+}
+/*
+func Test_TopParseLinux(t *testing.T) {
+// df -m
+  dfm := `8064 6440 1215 85% /
+829 1 829 1% /dev
+334 1 334 1% /run
+5 0 5 0% /run/lock
+834 0 834 0% /run/shm
+150293 188 142471 1% /mnt`
+  res := parseTopStatsLinux(dfm)
+  if(res[0].Group == "/dev/xvda1") && (res[0].Name == "Filesystem") {
    t.Log("one test passed.")
   } else {
     t.Error("Test df parse  did not work as expected.") 
   } 
 }
+*/

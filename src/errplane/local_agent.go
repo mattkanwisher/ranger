@@ -69,8 +69,9 @@ type LogTuple struct {
 } 
 
 type EStat struct {
+    Group string;
     Name string;
-    Val int;
+    Val int64;
 }
 
 
@@ -88,16 +89,31 @@ func postData(api_key string, api_url string, data string, log_id int) {
 
 func parseDriveStats(data string) []EStat {
    var out  []EStat
-   out = append(out, EStat{ "log_id", 123})
+   lines := strings.Split(data, "\n")
+   for _, line := range lines {
+     if(len(line) > 3) {
+        sections := strings.Split(line, " ")
+        if( len(sections) == 5 ) {
+            x, _ := strconv.ParseInt(sections[0], 10, 8)
+            out = append(out, EStat{ sections[4],  "1M-blocks", x})
+            y, _ := strconv.ParseInt(strings.Replace(sections[3], "%", "",-1),  10, 8)
+            out = append(out, EStat{ sections[4],  "AvailablePer", y})
+
+        } else {
+            log.Printf("Invalid number of sections %d\n", len(sections))
+        }        
+     }
+   }
    return out
 }
 
 
-func getSysStats() {
-    return;
-    fmt.Printf("in read data !")
-    myos :=  runtime.GOOS
+func parseTopStatsLinux(data string) []EStat {
+    return nil;
+}
 
+func getTopOutPut() {
+    myos :=  runtime.GOOS
     // OSX
     if myos == "darwin" {
      cmd = exec.Command("top", "-l", "1")
@@ -117,7 +133,37 @@ func getSysStats() {
     err  = nil
     contents,_ := ioutil.ReadAll(stdout)
 
-    log.Printf("top output -%s\n\n========\n%s\n", contents, myos)
+    log.Printf("top output -%s\n\n========\n%s\n", contents, myos)    
+}
+
+func getDfOutPut() {
+   // var cmdstr string
+//      cmd = exec.Command("df -m  |  sed 's/[  ][   ]*/\\\t/' |  cut  -f 2,3,4,6 | tr -s [:space:] | tail -n+2")
+   // cmdstr = "-c \"df -m | tail -n+2 |  sed 's/[ ]/-/'| tr -s [:space:] | cut -d' ' -f2,3,4,5,6 \""
+    cmd = exec.Command("bash", "-c", "df -m | tail -n+2 |  sed 's/[ ]/-/'| tr -s [:space:] | cut -d' ' -f2,3,4,5,6 ")
+
+    stdout, err := cmd.StdoutPipe()
+    if err != nil {
+        log.Fatal(err)
+    }
+    if err := cmd.Start(); err != nil {
+        log.Fatal(err)
+    }
+
+    err  = nil
+    contents,_ := ioutil.ReadAll(stdout)
+
+    scontents := fmt.Sprintf("%s", contents)
+    log.Printf("df output -%s\n\n", contents)    
+    parsed := parseDriveStats(scontents)
+    log.Printf("df parsed output -%s\n\n", parsed)    
+}
+
+func getSysStats() {
+    fmt.Printf("getSysStats !")
+
+    //getTopOutPut() 
+    getDfOutPut()
 }
 
 func readLogData(filename string, log_id int, logOutputChan chan<- *LogTuple) {
