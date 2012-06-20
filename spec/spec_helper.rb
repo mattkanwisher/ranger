@@ -18,7 +18,7 @@ RSpec.configure do |config|
 
     @pid_agent = fork do
       File.delete "/tmp/errplane.pid" rescue 0
-      `go build -o spec_agent -v  main`
+      `GOPATH=\`pwd\` go build -o spec_agent -v  main`
        `./spec_agent -c config/spec_errplane.conf`
     end
 
