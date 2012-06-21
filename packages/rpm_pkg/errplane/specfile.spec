@@ -19,9 +19,8 @@ Brief description of software package.
 
 %files
 %defattr(-,root,root)
-%doc
 
-/etc/errplane.conf
+%config /etc/errplane.conf
 /var/log/errplane/errplane.log
 /var/run/errplane/errplane.pid
 /usr/local/errplane/errplane-local-agent-_BUILD_
