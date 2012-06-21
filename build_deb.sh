@@ -66,3 +66,5 @@ function do_build() {
 #do_build amd64 amd64
 
 do_build i386 386
+
+git reset HEAD
