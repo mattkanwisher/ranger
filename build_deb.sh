@@ -1,8 +1,8 @@
 #!/bin/bash
 CONTROL=packages/deb_pkg/errplane/DEBIAN/control 
 CONTROL_POST=packages/deb_pkg/errplane/DEBIAN/postinst 
-RPM_SPECFILE=packages/rpm_pkg/errrplane/specfile.spec
-VER_SRC=src/local_agent.go
+RPM_SPECFILE=packages/rpm_pkg/errplane/specfile.spec
+VER_SRC=src/errplane/local_agent.go
 JENKINS_HOME=/var/lib/jenkins
 GOROOT=/var/lib/jenkins/go
 GOBIN=/var/lib/jenkins/bin
