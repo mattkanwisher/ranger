@@ -26,4 +26,3 @@ Brief description of software package.
 /var/run/errplane/errplane.pid
 /usr/local/errplane/errplane-local-agent-_BUILD_
 
-%changelogr
