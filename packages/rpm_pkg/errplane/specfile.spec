@@ -14,6 +14,7 @@ Brief description of software package.
 %build
 
 %install
+ln -s /usr/local/errplane/errplane-local-agent-_BUILD_ /usr/local/errplane/errplane-local-agent
 
 %clean
 
