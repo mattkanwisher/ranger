@@ -48,7 +48,7 @@ function do_build() {
 
   #TODO get i386 ver also
   rm -rf ${RPM_BUILD_ROOT}/*
-  RPM_BUILD_ROOT_WITH_OS=${RPM_BUILD_ROOT}/errplane-${NEW_BUILD_NUMBER}.x86_64
+  RPM_BUILD_ROOT_WITH_OS=${RPM_BUILD_ROOT}/errplane-${NEW_BUILD_NUMBER}-1.x86_64
   echo "Trying to create ${RPM_BUILD_ROOT_WITH_OS}"
   mkdir -p $RPM_BUILD_ROOT_WITH_OS
   echo "Trying to create ${RPM_BUILD_ROOT_WITH_OS} to DEB_PKG_ROOT"
