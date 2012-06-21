@@ -24,4 +24,4 @@ Brief description of software package.
 /var/log/errplane/errplane.log
 /var/run/errplane/errplane.pid
 /usr/local/errplane/errplane-local-agent-_BUILD_
-
+%exclude /usr/local/errplane/.gitkeep
