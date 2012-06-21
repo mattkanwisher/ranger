@@ -20,13 +20,6 @@ function do_build() {
   NEW_BUILD_NUMBER=1.0.${BUILD_NUMBER}
   #-${BUILD_CPU}
 
-  #TODO get i386 ver also
-  rm -rf ${RPM_BUILD_ROOT}/*
-  RPM_BUILD_ROOT_WITH_OS=${RPM_BUILD_ROOT}/errplane-${NEW_BUILD_NUMBER}.x86_64
-  mkdir -p $RPM_BUILD_ROOT_WITH_OS
-  ln -s ${DEB_PKG_ROOT}/etc ${RPM_BUILD_ROOT_WITH_OS}/etc 
-  ln -s ${DEB_PKG_ROOT}/usr ${RPM_BUILD_ROOT_WITH_OS}/usr 
-  ln -s ${DEB_PKG_ROOT}/var ${RPM_BUILD_ROOT_WITH_OS}/var
 
   rm ./packages/deb_pkg/errplane*.deb
   rm ./packages/deb_pkg/errplane-local-agent*
@@ -49,7 +42,21 @@ function do_build() {
   cd ../..
   sha=`shasum -a 256 local_agent`
   echo "SHA 256 - ${sha}"
+
+
   #TODO: sha hash of debian and rpm packages
+
+  #TODO get i386 ver also
+  rm -rf ${RPM_BUILD_ROOT}/*
+  RPM_BUILD_ROOT_WITH_OS=${RPM_BUILD_ROOT}/errplane-${NEW_BUILD_NUMBER}.x86_64
+  echo "Trying to create ${RPM_BUILD_ROOT_WITH_OS}"
+  mkdir -p $RPM_BUILD_ROOT_WITH_OS
+  echo "Trying to create ${RPM_BUILD_ROOT_WITH_OS} to DEB_PKG_ROOT"
+  cp -r ${DEB_PKG_ROOT}/etc ${RPM_BUILD_ROOT_WITH_OS}/etc 
+  cp -r ${DEB_PKG_ROOT}/usr ${RPM_BUILD_ROOT_WITH_OS}/usr 
+  cp -r ${DEB_PKG_ROOT}/var ${RPM_BUILD_ROOT_WITH_OS}/var
+
+
   cd packages/rpm_pkg/errplane
   rpmbuild --bb specfile.spec
   cd ../../../
