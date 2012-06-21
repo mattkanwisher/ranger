@@ -1,10 +1,15 @@
 #!/bin/bash
 CONTROL=packages/deb_pkg/errplane/DEBIAN/control 
 CONTROL_POST=packages/deb_pkg/errplane/DEBIAN/postinst 
+RPM_SPECFILE=packages/rpm_pkg/errrplane/specfile.spec
 VER_SRC=src/local_agent.go
+JENKINS_HOME=/var/lib/jenkins
 GOROOT=/var/lib/jenkins/go
 GOBIN=/var/lib/jenkins/bin
 PATH=$PATH:/var/lib/jenkins/bin
+
+#copy out latest rpm macro file
+cp packages/rpm_pkg/errrplane/dot_rpm_macros ${JENKINS_HOME}/.rpm_macros
 
 rm -rf output  ; true
 mkdir output
@@ -19,6 +24,7 @@ function do_build() {
   sed -i "s/_BUILD_/${NEW_BUILD_NUMBER}/g" $CONTROL 
   sed -i "s/_BUILD_/${NEW_BUILD_NUMBER}/g" $CONTROL_POST
   sed -i "s/_BUILD_/${NEW_BUILD_NUMBER}/g" $VER_SRC 
+  sed -i "s/_BUILD_/${NEW_BUILD_NUMBER}/g" $RPM_SPECFILE
   go get launchpad.net/gocheck
   go get github.com/kless/goconfig/config
   go get github.com/droundy/goopt
@@ -32,6 +38,11 @@ function do_build() {
   cd ../..
   sha=`shasum -a 256 local_agent`
   echo "SHA 256 - ${sha}"
+  #TODO: sha hash of debian and rpm packages
+  cd packages/rpm_pkg/errplane
+  rpmbuild --bb specfile.spec
+  cd ../../../
+
 }
 
 #do_build amd64 amd64
