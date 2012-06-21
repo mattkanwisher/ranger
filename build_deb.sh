@@ -7,7 +7,7 @@ JENKINS_HOME=/var/lib/jenkins
 GOROOT=/var/lib/jenkins/go
 GOBIN=/var/lib/jenkins/bin
 PATH=$PATH:/var/lib/jenkins/bin
-RPM_BUILD_ROOT=${JENKINS_HOME}/jobs/local_agent/workspace/rpm_pkg/errplane/BUILDROOT
+RPM_BUILD_ROOT=${JENKINS_HOME}/jobs/local_agent/workspace/packages/rpm_pkg/errplane/BUILDROOT
 DEB_PKG_ROOT=packages/deb_pkg/errplane
 
 #copy out latest rpm macro file
