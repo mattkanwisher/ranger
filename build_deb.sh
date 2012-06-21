@@ -9,7 +9,7 @@ GOBIN=/var/lib/jenkins/bin
 PATH=$PATH:/var/lib/jenkins/bin
 
 #copy out latest rpm macro file
-cp packages/rpm_pkg/errrplane/dot_rpm_macros ${JENKINS_HOME}/.rpm_macros
+cp packages/rpm_pkg/errplane/dot_rpm_macros ${JENKINS_HOME}/.rpm_macros
 
 rm -rf output  ; true
 mkdir output
