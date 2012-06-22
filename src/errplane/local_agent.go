@@ -78,8 +78,8 @@ type EStat struct {
 func postData(api_key string, api_url string, data string, log_id int) {
     server_name, _ := os.Hostname() 
 //    contents,_ := ioutil.ReadAll(data);
-//	buf := bytes.NewBuffer("your string")
-	buf2 := bytes.NewBufferString(data)
+//  buf := bytes.NewBuffer("your string")
+  buf2 := bytes.NewBufferString(data)
     //TODO url escaping
     url := fmt.Sprintf("%s/api/v1/logs/%d/agents/%s?api_key=%s", api_url, log_id, url.QueryEscape(server_name), api_key)
     fmt.Printf("posting to url -%s\n%s\n", url,buf2)
@@ -166,7 +166,7 @@ func getSysStats() {
     getDfOutPut()
 }
 
-func readLogData(filename string, log_id int, logOutputChan chan<- *LogTuple) {
+func readLogData(filename string, log_id int, logOutputChan chan<- *LogTuple, deathChan chan<- *string) {
     fmt.Printf("in read data !")
     cmd := exec.Command("tail", "-f", filename)
     stdout, err := cmd.StdoutPipe()
@@ -183,7 +183,6 @@ func readLogData(filename string, log_id int, logOutputChan chan<- *LogTuple) {
     lines := 0
     for ; err == nil;  {
         s,err := reader.ReadString('\n')
-        fmt.Printf("got line-%s---%s-\n", filename, s)
         sbuffer += s
         lines += 1
         if(lines > 5 ) { //|| time > 1 min) {
@@ -193,11 +192,13 @@ func readLogData(filename string, log_id int, logOutputChan chan<- *LogTuple) {
             lines = 0
         }
         if err != nil {
-            log.Fatal(err)
+            //TODO if the go routine exits it needs to tell the brain
+            fmt.Printf("tail must have died restart it!\n")
+            deathChan <- &filename
+            return
         }
     }
 
-    //TODO if the go routine exits it needs to tell the brain
     //SetFinalizer
 }
 /*
@@ -355,6 +356,7 @@ func theBrain( in <-chan *AgentConfigType, api_key string, api_url string) {
 
 
     logOutputChan := make(chan *LogTuple)
+    gorDeathChan := make(chan *string)
 
     //Setup go routine for Data posting
     go dataPosting(logOutputChan, api_key, api_url)
@@ -364,22 +366,27 @@ func theBrain( in <-chan *AgentConfigType, api_key string, api_url string) {
     go getSysStats()
     runningGoR["SYSTEM_STATS"] = true
 
-
-
     for ;; {
-        log.Printf("Waiting for config data")
-        //TODO LOOK FOR DEATH OF GOROUTINES AND RESPAWN THEM
-        config_data := <-in
-        log.Printf("Recieved for config data")
-        for _,alog := range config_data.Agent_logs { 
-           if( runningGoR[alog.Log.Path] == true) {
-                log.Printf("Sweet go routine is already running\n")
-           } else {
-               go readLogData(alog.Log.Path, alog.Log.Id, logOutputChan)
-               runningGoR[alog.Log.Path] = true
-               log.Printf("Launched go routine\n")
-            }
+      log.Printf("Waiting for config data")
+      //TODO LOOK FOR DEATH OF GOROUTINES AND RESPAWN THEM
+      for {
+        select {
+        case config_data := <-in:
+          log.Printf("Recieved for config data")
+          for _,alog := range config_data.Agent_logs { 
+             if( runningGoR[alog.Log.Path] == true) {
+                  log.Printf("Sweet go routine is already running\n")
+             } else {
+                 go readLogData(alog.Log.Path, alog.Log.Id, logOutputChan, gorDeathChan)
+                 runningGoR[alog.Log.Path] = true
+                 log.Printf("Launched go routine\n")
+              }
+          }
+        case death := <-gorDeathChan:
+            log.Printf("death-%s\n", *death)
+            runningGoR[*death] = false
         }
+      }
     }
 }
 
@@ -477,4 +484,3 @@ func Errplane_main() {
         runtime.Gosched()
     }
 }
-    
