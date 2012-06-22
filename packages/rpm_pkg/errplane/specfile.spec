@@ -23,6 +23,7 @@ ln -s /usr/local/errplane/errplane-local-agent-_BUILD_ /usr/local/errplane/errpl
 %defattr(-,root,root)
 
 %config /etc/errplane.conf
+/etc/init.d/errplane
 /var/log/errplane/errplane.log
 /var/run/errplane/errplane.pid
 /usr/local/errplane/errplane-local-agent-_BUILD_

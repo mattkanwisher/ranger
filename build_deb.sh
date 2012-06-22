@@ -15,14 +15,15 @@ cp packages/rpm_pkg/errplane/dot_rpm_macros ${JENKINS_HOME}/.rpmmacros
 
 rm -rf output  ; true
 mkdir output
+rm ./packages/deb_pkg/errplane*.deb
+rm ./packages/deb_pkg/errplane-local-agent*
+
 function do_build() {
   BUILD_CPU=$1
   NEW_BUILD_NUMBER=1.0.${BUILD_NUMBER}
   #-${BUILD_CPU}
 
 
-  rm ./packages/deb_pkg/errplane*.deb
-  rm ./packages/deb_pkg/errplane-local-agent*
   #requires gnu sed 
   git checkout $CONTROL $CONTROL_POST $VER_SRC $RPM_SPECFILE
   sed -i "s/_OS_/${BUILD_CPU}/g" $CONTROL 
