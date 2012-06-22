@@ -1,6 +1,6 @@
 #!/bin/sh
 
-DAEMON=/usr/local/errplane/errplane-local-agent
+DAEMON=/usr/local/bin/errplane-local-agent
 PARAMS="--foreground"
 LOGFILE=/var/log/errplane/daemon.log
 
@@ -10,9 +10,9 @@ start() {
     RUN=`cd / && $DAEMON $PARAMETERS > $LOGFILE 2>&1`
 
     if [ "$?" -eq 0 ]; then
-        echo "Done."
+        echo "\nDone."
     else
-        echo "FAILED."
+        echo "\nFAILED."
     fi
 }
 

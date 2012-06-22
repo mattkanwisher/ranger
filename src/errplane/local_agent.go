@@ -464,12 +464,12 @@ func do_fork(executable, config_file string) {
   
   bfile,_ := FileExist(executable)
   if( bfile == false ){
-    fmt.Printf("Can not find daemonizing script " + executable + ", ensure that Errplane is configured properly!")
+    fmt.Printf("Can not find daemonizing script " + executable + "! \n")
     os.Exit(1)
   }
 
   cmdstr :=   executable + " -c " + config_file + " --foreground"
-  fmt.Printf(cmdstr)
+  fmt.Printf(cmdstr + "\n")
 
   cmd = exec.Command( executable, "start" )
 
@@ -504,9 +504,15 @@ func Errplane_main() {
 
     fmt.Printf("Daemonizing %t\n", *amForeground)
     if(!*amForeground) {
-      do_fork(os.Args[0], fconfig_file)
-      fmt.Printf("Exiting parent process-%s\n", os.Args[0])
-      os.Exit(0)
+      //Daemonizing requires root
+      if( os.Getuid() == 0) {
+        do_fork(os.Args[0], fconfig_file)
+        fmt.Printf("Exiting parent process-%s\n", os.Args[0])
+        os.Exit(0)
+        } else {
+          fmt.Printf("Daemoning requires root \n")
+          os.Exit(1)
+        }
     }
 
     api_url,_ := c.String("DEFAULT", "api_host")
