@@ -9,14 +9,17 @@ GOBIN=/var/lib/jenkins/bin
 PATH=$PATH:/var/lib/jenkins/bin
 RPM_BUILD_ROOT=${JENKINS_HOME}/jobs/local_agent/workspace/packages/rpm_pkg/errplane/BUILDROOT
 DEB_PKG_ROOT=packages/deb_pkg/errplane
+OUT_EXE=packages/out_exe
 
 #copy out latest rpm macro file
 cp packages/rpm_pkg/errplane/dot_rpm_macros ${JENKINS_HOME}/.rpmmacros
 
 rm -rf output  ; true
 mkdir output
+mkdir $OUT_EXE
 rm ./packages/deb_pkg/errplane*.deb
 rm ./packages/deb_pkg/errplane-local-agent*
+rm $OUT_EXE/*
 
 function do_build() {
   BUILD_CPU=$1
@@ -40,6 +43,7 @@ function do_build() {
   chmod +x local_agent
   rm ${DEB_PKG_ROOT}/usr/local/errplane/errplane-local-agent*
   cp local_agent packages/deb_pkg/errplane/usr/local/errplane/errplane-local-agent-${NEW_BUILD_NUMBER}
+  cp local_agent ${OUT_EXE}/errplane-local-agent-${NEW_BUILD_NUMBER}-$2
   cd packages/deb_pkg
   dpkg --build errplane ./
   cd ../..
