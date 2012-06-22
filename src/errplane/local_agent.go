@@ -314,9 +314,11 @@ func upgrade_version(new_version string, valid_hash string, out_dir string, agen
     //proca.Files =  []uintptr{uintptr(syscall.Stdout), uintptr(syscall.Stderr)}
 //     _, err = syscall.ForkExec(agent_bin, argv, &proca)//agent_bin)
 //     err = syscall.Exec("/Users/kanwisher/projects/errplane/local_agent/local_agent", argv, os.Environ())//agent_bin)
-    //TODO FOR NOW WE JUST EXIT AFTER UPGRADE AND LET MONIT RESTART US, UGH HAVE TO FIGURE OUT THIS FORKEXEC BS
-    err = nil
-     if err != nil {
+    //TODO for now just launch the daemon script instead of some insane fork/exec stufff
+    executable = "/etc/init.d/errplane"
+    cmd = exec.Command( executable, "start" )
+
+    if err != nil {
         fmt.Printf("Failed running new version!--%s\n", err)
         panic(err)
     } else {
@@ -458,7 +460,7 @@ func fork() (pid uintptr, err syscall.Errno) {
 
 
 func do_fork(executable, config_file string) {
-  executable = "/etc/init.d/errplane-local-agent"
+  executable = "/etc/init.d/errplane"
   
   bfile,_ := FileExist(executable)
   if( bfile == false ){
@@ -469,7 +471,7 @@ func do_fork(executable, config_file string) {
   cmdstr :=   executable + " -c " + config_file + " --foreground"
   fmt.Printf(cmdstr)
 
-  cmd = exec.Command( executable )
+  cmd = exec.Command( executable, "start" )
 
   if err := cmd.Start(); err != nil {
       log.Fatal(err)
