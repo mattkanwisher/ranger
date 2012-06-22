@@ -76,13 +76,14 @@ type EStat struct {
 
 
 func postData(api_key string, api_url string, data string, log_id int) {
+    log.Printf("Posting log data to server %s\n", log_id)
     server_name, _ := os.Hostname() 
 //    contents,_ := ioutil.ReadAll(data);
 //  buf := bytes.NewBuffer("your string")
   buf2 := bytes.NewBufferString(data)
     //TODO url escaping
     url := fmt.Sprintf("%s/api/v1/logs/%d/agents/%s?api_key=%s", api_url, log_id, url.QueryEscape(server_name), api_key)
-    fmt.Printf("posting to url -%s\n%s\n", url,buf2)
+    log.Printf("posting to url -%s\n%s\n", url,buf2)
     http.Post(url, "application/text", buf2)
 //TODO HANDLE ERROR AND RETRIES!
 }
@@ -160,14 +161,13 @@ func getDfOutPut() {
 }
 
 func getSysStats() {
-    fmt.Printf("getSysStats !")
+    log.Printf("Pulling system stats")
 
     //getTopOutPut() 
     getDfOutPut()
 }
 
 func readLogData(filename string, log_id int, logOutputChan chan<- *LogTuple, deathChan chan<- *string) {
-    fmt.Printf("in read data !")
     cmd := exec.Command("tail", "-f", filename)
     stdout, err := cmd.StdoutPipe()
     if err != nil {
@@ -186,14 +186,11 @@ func readLogData(filename string, log_id int, logOutputChan chan<- *LogTuple, de
         sbuffer += s
         lines += 1
         if(lines > 5 ) { //|| time > 1 min) {
-            fmt.Printf("Clearing buffer and posting to http\n")
             logOutputChan <- &LogTuple{ log_id, sbuffer}
             sbuffer = ""
             lines = 0
         }
         if err != nil {
-            //TODO if the go routine exits it needs to tell the brain
-            fmt.Printf("tail must have died restart it!\n")
             deathChan <- &filename
             return
         }
@@ -216,9 +213,9 @@ func parseJsonFromFile() {
 */
 //TODO: IF this fails  read from disk, if that fails sleep until the server is back online
 func parseJsonFromHttp(api_url string, api_key string) AgentConfigType {
-    server:= "TEST" // os.Hostname() 
+    server, _ :=  os.Hostname() 
     full_config_url := fmt.Sprintf(api_url + "/api/v1/agents/%s/config?api_key=%s", url.QueryEscape(server), api_key)
-    fmt.Printf("api url %s\n", full_config_url)
+    log.Printf("Updating config info %s\n", full_config_url)
     resp, err := http.Get(full_config_url)
     if err != nil {
         // handle error
@@ -338,7 +335,6 @@ func dataPosting(logOutputChan <-chan *LogTuple, api_key string, api_url string)
     for {
       select {
       case <-ticker.C:
-        log.Printf("Posting timeout, lets clear the buffer!")
         for lid,data := range buffer {
             if( len(data) > 0) {
                 postData(api_key, api_url, data, lid)
@@ -374,12 +370,10 @@ func theBrain( in <-chan *AgentConfigType, api_key string, api_url string) {
         case config_data := <-in:
           log.Printf("Recieved for config data")
           for _,alog := range config_data.Agent_logs { 
-             if( runningGoR[alog.Log.Path] == true) {
-                  log.Printf("Sweet go routine is already running\n")
-             } else {
-                 go readLogData(alog.Log.Path, alog.Log.Id, logOutputChan, gorDeathChan)
-                 runningGoR[alog.Log.Path] = true
-                 log.Printf("Launched go routine\n")
+             if( runningGoR[alog.Log.Path] == false) {
+               go readLogData(alog.Log.Path, alog.Log.Id, logOutputChan, gorDeathChan)
+               runningGoR[alog.Log.Path] = true
+               log.Printf("Launched go routine\n")
               }
           }
         case death := <-gorDeathChan:
@@ -393,16 +387,14 @@ func theBrain( in <-chan *AgentConfigType, api_key string, api_url string) {
 
 func checkForUpdatedConfigs(auto_update string, config_url string, api_key string, output_dir string, agent_bin string, out chan<- *AgentConfigType) {
     for ;;  {
-        fmt.Printf("Waking up to check configuration\n")
-
         config_data := parseJsonFromHttp(config_url, api_key)
         out <- &config_data
 
-        log.Printf("Expected agent version-%s\n", config_data.Version)
 
         if auto_update == "true" && config_data.Version != BUILD_NUMBER {
-            upgrade_version(config_data.Version, config_data.Sha256, output_dir, agent_bin)
-            log.Printf("Failed upgrading!\n")
+          log.Printf("Upgrading agent version-%s\n", config_data.Version)
+          upgrade_version(config_data.Version, config_data.Sha256, output_dir, agent_bin)
+          log.Printf("Failed upgrading!\n")
         } else {
             log.Printf("Don't need to upgrade versions\n")
         }
@@ -426,9 +418,13 @@ func Errplane_main() {
     var fconfig_file string
     fconfig_file = *config_file
 
-    fmt.Printf("Loading config file ", fconfig_file, ".")
+    fmt.Printf("Loading config file %s.\n", fconfig_file )
 
-    c, _ := config.ReadDefault(fconfig_file)
+    c, err := config.ReadDefault(fconfig_file)
+    if( err != nil ) {
+      log.Fatal("Can not find the Errplane Config file, please install it in /etc/errplane/errplane.conf.")
+    }
+
     api_url,_ := c.String("DEFAULT", "api_host")
     config_url,_ := c.String("DEFAULT", "config_host")
     api_key,_ := c.String("DEFAULT", "api_key")
@@ -461,7 +457,7 @@ func Errplane_main() {
 
 
 
-    _, err := exec.LookPath("tail")
+    _, err = exec.LookPath("tail")
     if err != nil {
         log.Fatal("installing tail is in your future")
 //        exit(1)
