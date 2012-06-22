@@ -32,6 +32,7 @@ function do_build() {
   go get launchpad.net/gocheck
   go get github.com/kless/goconfig/config
   go get github.com/droundy/goopt
+  go get code.google.com/p/log4go
   GOPATH=`pwd`:$GOPATH GOARCH=$2 GOOS=linux go build -o local_agent -v  main
   #cp local_agent packages/deb_pkg/errplane/usr/local/bin/errplane-local-agent
   chmod +x local_agent
