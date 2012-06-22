@@ -19,8 +19,9 @@ import "strings"
 import "crypto/sha256" 
 import "hash"
 import "strconv"
-//import "syscall"
+import "syscall"
 import "net/url"
+
 
 var BUILD_NUMBER = "_BUILD_"
 //var BUILD_NUMBER = "1.0.50"
@@ -402,8 +403,82 @@ func checkForUpdatedConfigs(auto_update string, config_url string, api_key strin
     }
 
 }
+/*
+func daemon (nochdir, noclose int) int {
+  var ret uintptr
+  var err uintptr
+
+  ret,_,err = syscall.Syscall(syscall.SYS_FORK, 0, 0, 0)
+  if err != 0 { return -1 }
+  switch (ret) {
+    case 0:
+      break
+    default:
+      os.Exit (0)
+  }
+
+  if syscall.Setsid () == -1 { return -1 }
+  if (nochdir == 0) { os.Chdir("/") }
+
+  if noclose == 0 {
+    f, e := os.Open ("/dev/null", os.O_RDWR, 0)
+    if e == nil {
+      fd := f.Fd ()
+      syscall.Dup2 (fd, os.Stdin.Fd ())
+      syscall.Dup2 (fd, os.Stdout.Fd ())
+      syscall.Dup2 (fd, os.Stderr.Fd ())
+    }
+  }
+
+  return 0
+}
+*/
+
+
+func fork() (pid uintptr, err syscall.Errno) {
+    var r1, r2 uintptr
+    var err1 syscall.Errno
+
+    darwin := runtime.GOOS == "darwin"
+
+    r1, r2, err1 = syscall.RawSyscall(syscall.SYS_FORK, 0, 0, 0)
+
+    if err != 0 {
+        return 0, err1
+    }
+
+    // Handle exception for darwin
+    if darwin && r2 == 1 {
+        r1 = 0;
+    }
+
+    return r1, 0
+
+}
+
+
+func do_fork(executable, config_file string) {
+  executable = "/etc/init.d/errplane-local-agent"
+  
+  bfile,_ := FileExist(executable)
+  if( bfile == false ){
+    fmt.Printf("Can not find daemonizing script " + executable + ", ensure that Errplane is configured properly!")
+    os.Exit(1)
+  }
+
+  cmdstr :=   executable + " -c " + config_file + " --foreground"
+  fmt.Printf(cmdstr)
+
+  cmd = exec.Command( executable )
+
+  if err := cmd.Start(); err != nil {
+      log.Fatal(err)
+  }
+}
 
 var config_file = goopt.String([]string{"-c", "--config"}, "/etc/errplane.conf", "config file")
+
+var amForeground = goopt.Flag([]string{"--foreground"}, []string{"--background"},  "run foreground", "run background")
 
 func Errplane_main() {
     fmt.Printf("ERRPlane Local Agent starting, Version %s \n", BUILD_NUMBER)
@@ -423,6 +498,13 @@ func Errplane_main() {
     c, err := config.ReadDefault(fconfig_file)
     if( err != nil ) {
       log.Fatal("Can not find the Errplane Config file, please install it in /etc/errplane/errplane.conf.")
+    }
+
+    fmt.Printf("Daemonizing %t\n", *amForeground)
+    if(!*amForeground) {
+      do_fork(os.Args[0], fconfig_file)
+      fmt.Printf("Exiting parent process-%s\n", os.Args[0])
+      os.Exit(0)
     }
 
     api_url,_ := c.String("DEFAULT", "api_host")
