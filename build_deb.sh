@@ -24,6 +24,7 @@ function do_build() {
   rm ./packages/deb_pkg/errplane*.deb
   rm ./packages/deb_pkg/errplane-local-agent*
   #requires gnu sed 
+  git checkout $CONTROL $CONTROL_POST $VER_SRC $RPM_SPECFILE
   sed -i "s/_OS_/${BUILD_CPU}/g" $CONTROL 
   sed -i "s/_BUILD_/${NEW_BUILD_NUMBER}/g" $CONTROL 
   sed -i "s/_BUILD_/${NEW_BUILD_NUMBER}/g" $CONTROL_POST
@@ -46,26 +47,24 @@ function do_build() {
 
 
   #TODO: sha hash of debian and rpm packages
-
-  #TODO get i386 ver also
-  rm -rf ${RPM_BUILD_ROOT}/*
-  RPM_BUILD_ROOT_WITH_OS=${RPM_BUILD_ROOT}/errplane-${NEW_BUILD_NUMBER}-1.x86_64
-  echo "Trying to create ${RPM_BUILD_ROOT_WITH_OS}"
-  mkdir -p $RPM_BUILD_ROOT_WITH_OS
-  echo "Trying to create ${RPM_BUILD_ROOT_WITH_OS} to DEB_PKG_ROOT"
-  cp -r ${DEB_PKG_ROOT}/etc ${RPM_BUILD_ROOT_WITH_OS}/etc 
-  cp -r ${DEB_PKG_ROOT}/usr ${RPM_BUILD_ROOT_WITH_OS}/usr 
-  cp -r ${DEB_PKG_ROOT}/var ${RPM_BUILD_ROOT_WITH_OS}/var
-
-
-  cd packages/rpm_pkg/errplane
-  rpmbuild --bb specfile.spec
-  cd ../../../
-
 }
 
-#do_build amd64 amd64
-
 do_build i386 386
+do_build amd64 amd64
+
+
+rm -rf ${RPM_BUILD_ROOT}/*
+RPM_BUILD_ROOT_WITH_OS=${RPM_BUILD_ROOT}/errplane-${NEW_BUILD_NUMBER}-1.x86_64
+echo "Trying to create ${RPM_BUILD_ROOT_WITH_OS}"
+mkdir -p $RPM_BUILD_ROOT_WITH_OS
+echo "Trying to create ${RPM_BUILD_ROOT_WITH_OS} to DEB_PKG_ROOT"
+cp -r ${DEB_PKG_ROOT}/etc ${RPM_BUILD_ROOT_WITH_OS}/etc 
+cp -r ${DEB_PKG_ROOT}/usr ${RPM_BUILD_ROOT_WITH_OS}/usr 
+cp -r ${DEB_PKG_ROOT}/var ${RPM_BUILD_ROOT_WITH_OS}/var
+
+
+cd packages/rpm_pkg/errplane
+rpmbuild --bb specfile.spec
+cd ../../../
 
 git reset HEAD
