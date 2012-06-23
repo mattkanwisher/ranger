@@ -40,7 +40,8 @@ type AgentConfigType struct {
     Id int
     Version string
     Server string
-    Sha256 string
+    Sha256 string //i386
+    Sha256_amd64 string
     Configuration_interval int
     Name string
     Organization_id int
@@ -398,7 +399,11 @@ func checkForUpdatedConfigs(auto_update string, config_url string, api_key strin
 
         if auto_update == "true" && config_data.Version != BUILD_NUMBER {
           l4g.Debug("Upgrading agent version-%s\n", config_data.Version)
-          upgrade_version(config_data.Version, config_data.Sha256, output_dir, agent_bin)
+          hdata := config_data.Sha256
+          if( runtime.GOARCH == "amd64" ) {
+             hdata = config_data.Sha256_amd64
+          }
+          upgrade_version(config_data.Version, hdata, output_dir, agent_bin)
           l4g.Debug("Failed upgrading!\n")
         } else {
             l4g.Fine("Don't need to upgrade versions\n")
@@ -528,7 +533,7 @@ func Errplane_main() {
 
     if(!*amForeground) {
       //Daemonizing requires root
-      if( os.Getuid() == 0) {
+      if( os.Getuid() == 0 ) {
         do_fork(os.Args[0], fconfig_file)
         l4g.Fine("Exiting parent process-%s\n", os.Args[0])
         os.Exit(0)
