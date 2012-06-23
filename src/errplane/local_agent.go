@@ -486,7 +486,7 @@ func do_fork(executable, config_file string) {
 }
 
 var config_file = goopt.String([]string{"-c", "--config"}, "/etc/errplane.conf", "config file")
-
+var install_api_key = goopt.String([]string{"-i", "--install-api-key"},  "", "install api key")
 var amForeground = goopt.Flag([]string{"--foreground"}, []string{"--background"},  "run foreground", "run background")
 
 func setup_logger() {
@@ -511,6 +511,7 @@ func setup_logger() {
   }
 }
 
+
 func Errplane_main() {
     fmt.Printf("ERRPlane Local Agent starting, Version %s \n", BUILD_NUMBER)
 
@@ -531,6 +532,25 @@ func Errplane_main() {
       log.Fatal("Can not find the Errplane Config file, please install it in /etc/errplane/errplane.conf.")
     }
 
+    api_key,_ := c.String("DEFAULT", "api_key")
+
+    if(len(*install_api_key) > 1) {
+      fmt.Printf("Saving new Config!\n")
+      c.AddOption("DEFAULT", "api_key", *install_api_key)
+      c.WriteFile(fconfig_file, 0644, "")
+
+      c, err := config.ReadDefault(fconfig_file)
+      if( err != nil ) {
+        log.Fatal("Can not find the Errplane Config file, please install it in /etc/errplane/errplane.conf.")
+      }
+      api_key,_ = c.String("DEFAULT", "api_key")
+    }
+
+    if(len(api_key) < 1) {
+      log.Fatal("No api key found. Please rerun this with --install-api-key <api_key_here> ")      
+      os.Exit(1)
+    }
+
     if(!*amForeground) {
       //Daemonizing requires root
       if( os.Getuid() == 0 ) {
@@ -547,7 +567,6 @@ func Errplane_main() {
 
     api_url,_ := c.String("DEFAULT", "api_host")
     config_url,_ := c.String("DEFAULT", "config_host")
-    api_key,_ := c.String("DEFAULT", "api_key")
     output_dir,_ := c.String("DEFAULT", "agent_path")
     if(len(output_dir) < 1) {
        output_dir =  "/usr/local/errplane/"
@@ -561,6 +580,7 @@ func Errplane_main() {
         pid_location =  "/var/run/errplane/errplane.pid"
     }
     auto_update,_ := c.String("DEFAULT", "auto_upgrade")
+
 
     write_pid(pid_location)
 

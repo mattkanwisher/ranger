@@ -17,11 +17,11 @@ start() {
 }
 
 stop() {
-    killall $DAEMON
+    pkill -9 -f errplane-local-agent
 }
 
 status() {
-    killall -0 $DAEMON
+    pgrep -f errplane-local-agent
 
     if [ "$?" -eq 0 ]; then
         echo "Running."
