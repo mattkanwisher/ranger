@@ -315,13 +315,12 @@ func upgrade_version(new_version string, valid_hash string, out_dir string, agen
 //     _, err = syscall.ForkExec(agent_bin, argv, &proca)//agent_bin)
 //     err = syscall.Exec("/Users/kanwisher/projects/errplane/local_agent/local_agent", argv, os.Environ())//agent_bin)
     //TODO for now just launch the daemon script instead of some insane fork/exec stufff
-    executable := "/etc/init.d/errplane"
-    cmd = exec.Command( executable, "start" )
-
     if err != nil {
         fmt.Printf("Failed running new version!--%s\n", err)
         panic(err)
     } else {
+        l4g.Debug("Upgradeing! Please wait! \n")
+        do_fork("","")
         time.Sleep(10 * time.Second)
         fmt.Printf("Upgraded! Now Extiing! \n")
         os.Exit(0)
