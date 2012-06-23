@@ -19,7 +19,7 @@ mkdir output
 mkdir $OUT_EXE
 rm ./packages/deb_pkg/errplane*.deb
 rm ./packages/deb_pkg/errplane-local-agent*
-rn packages/rpm_pkg/errplane/RPMS/x86_64/errplane*
+rm packages/rpm_pkg/errplane/RPMS/x86_64/errplane*
 rm $OUT_EXE/*
 
 function do_build() {
