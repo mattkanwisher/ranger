@@ -25,7 +25,7 @@ import l4g "code.google.com/p/log4go"
 
 var BUILD_NUMBER = "_BUILD_"
 //var BUILD_NUMBER = "1.0.50"
-var DOWNLOAD_LOCATION = "http://download.errplane.com/errplane-local-agent-%s"
+var DOWNLOAD_LOCATION = "http://download.errplane.com/errplane-local-agent-%s-%s"
 var OUTPUT_FILE_FORMAT = "errplane-local-agent-%s"
 var cmd *exec.Cmd
 
@@ -249,17 +249,17 @@ func write_pid(pid_location string) {
 func upgrade_version(new_version string, valid_hash string, out_dir string, agent_bin string) {
    l4g.Debug("Upgrading to current version %s from version %s.\n", new_version, BUILD_NUMBER)
 
-    download_file_url := fmt.Sprintf(DOWNLOAD_LOCATION, new_version)
+    download_file_url := fmt.Sprintf(DOWNLOAD_LOCATION, new_version, runtime.GOARCH)
     l4g.Debug("download_file %s\n", download_file_url)
     resp, err := http.Get(download_file_url)
     if err != nil {
         // handle error
-        fmt.Printf("error getting config data-%s\n",err)    
+        l4g.Error("error getting config data-%s\n",err)    
         os.Exit(1)
     }
     if resp.StatusCode != 200 {
         // handle error
-        fmt.Printf("Recieved a bad http code downloading %d-\n", resp.StatusCode)    
+        l4g.Error("Recieved a bad http code downloading %d-\n", resp.StatusCode)    
         os.Exit(1)
     }
 
@@ -528,7 +528,7 @@ func Errplane_main() {
       //Daemonizing requires root
       if( os.Getuid() == 0) {
         do_fork(os.Args[0], fconfig_file)
-        fmt.Printf("Exiting parent process-%s\n", os.Args[0])
+        l4g.Fine("Exiting parent process-%s\n", os.Args[0])
         os.Exit(0)
         } else {
           fmt.Printf("Daemoning requires root \n")
