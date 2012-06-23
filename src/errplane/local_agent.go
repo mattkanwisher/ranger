@@ -255,12 +255,12 @@ func upgrade_version(new_version string, valid_hash string, out_dir string, agen
     if err != nil {
         // handle error
         l4g.Error("error getting config data-%s\n",err)    
-        os.Exit(1)
+        return
     }
     if resp.StatusCode != 200 {
         // handle error
         l4g.Error("Recieved a bad http code downloading %d-\n", resp.StatusCode)    
-        os.Exit(1)
+        return
     }
 
     defer resp.Body.Close()
@@ -271,10 +271,10 @@ func upgrade_version(new_version string, valid_hash string, out_dir string, agen
     fmt.Printf("downloaded file with hash of %s\n", hash_code)
 
     if( hash_code == valid_hash) {
-        fmt.Printf("Sweet valid file downloaded!")
+        l4g.Debug("Sweet valid file downloaded!")
     } else {
-        fmt.Printf("invalid hash!")
-        os.Exit(1)
+        l4g.Error("invalid hash!")
+        return
     }
 
     out_file := fmt.Sprintf(OUTPUT_FILE_FORMAT, new_version)
@@ -282,7 +282,10 @@ func upgrade_version(new_version string, valid_hash string, out_dir string, agen
 
 
     err = ioutil.WriteFile(out_location, download_file, 0744)
-    if err != nil { panic(err) }
+    if err != nil {
+       l4g.Error(err) 
+       return
+     }
 
     fmt.Printf("Finished writing file!\n")
 
@@ -292,16 +295,16 @@ func upgrade_version(new_version string, valid_hash string, out_dir string, agen
     fmt.Printf("symlinking %s to %s\n", out_location, agent_bin)
     err = os.Symlink(out_location, agent_bin)
     if err != nil {
-        fmt.Printf("Failed symlinking!--%s\n", err)
-        panic(err)
+        l4g.Error("Failed symlinking!--%s\n", err)
+        return
     } 
 //Not entirely sure how to use filemode
 //    err = os.Chmod(agent_bin, FileMode.)
     cmd = exec.Command("chmod", "+x", agent_bin)
     err = cmd.Start()
     if err != nil {
-        fmt.Printf("Failed chmoding!--%s\n", err)
-        panic(err)
+        l4g.Error("Failed chmoding!--%s\n", err)
+        return
     } 
 
     fmt.Printf("Trying new version !\n")
@@ -316,13 +319,13 @@ func upgrade_version(new_version string, valid_hash string, out_dir string, agen
 //     err = syscall.Exec("/Users/kanwisher/projects/errplane/local_agent/local_agent", argv, os.Environ())//agent_bin)
     //TODO for now just launch the daemon script instead of some insane fork/exec stufff
     if err != nil {
-        fmt.Printf("Failed running new version!--%s\n", err)
-        panic(err)
+        l4g.Error("Failed running new version!--%s\n", err)
+        return
     } else {
-        l4g.Debug("Upgradeing! Please wait! \n")
+        l4g.Debug("Upgrading! Please wait! \n")
         do_fork("","")
         time.Sleep(10 * time.Second)
-        fmt.Printf("Upgraded! Now Extiing! \n")
+        l4g.Debug("Upgraded! Now Extiing! \n")
         os.Exit(0)
     }
 
