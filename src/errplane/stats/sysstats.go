@@ -1,6 +1,13 @@
 package stats
+import "runtime"
+import "os/exec"
+import "log"
+import "io/ioutil"
+import l4g "code.google.com/p/log4go"
 
-func parseTopStatsLinux(data string) []stats.EStat {
+var cmd *exec.Cmd
+
+func parseTopStatsLinux(data string) []EStat {
 	return nil
 }
 
