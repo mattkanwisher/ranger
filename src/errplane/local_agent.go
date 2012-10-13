@@ -3,7 +3,7 @@ package errplane
 import "fmt"
 import "net/http"
 import "bytes"
-//import "io/ioutil"
+//import "io/ioutil"url
 import "log"
 import "os/exec"
 //import "io"
@@ -22,6 +22,7 @@ import "strconv"
 import "syscall"
 import "net/url"
 import l4g "code.google.com/p/log4go"
+import stats "errplane/stats"
 
 var BUILD_NUMBER = "_BUILD_"
 //var BUILD_NUMBER = "1.0.50"
@@ -70,12 +71,6 @@ type LogTuple struct {
    Data string; 
 } 
 
-type EStat struct {
-    Group string;
-    Name string;
-    Val int64;
-}
-
 
 func postData(api_key string, api_url string, data string, log_id int) {
     l4g.Debug("Posting log data to server %s\n", log_id)
@@ -90,108 +85,8 @@ func postData(api_key string, api_url string, data string, log_id int) {
 //TODO HANDLE ERROR AND RETRIES!
 }
 
-/*
-func postStatData(api_key string, api_url string, name string, value int) {
-    l4g.Debug("Posting stat data to server %s\n", name)
-    server_name, _ := os.Hostname() 
-//    contents,_ := ioutil.ReadAll(data);
-//  buf := bytes.NewBuffer("your string")
-    buf2 := bytes.NewBufferString(data)
-    //TODO url escaping
-    url := fmt.Sprintf("%s//api/v1/time_series/system_%s_%d?api_key=%s", api_url, url.QueryEscape(server_name), value, api_key)
-    l4g.Debug("posting to url -%s\n", url)
-    http.Post(url, "application/text", buf2)
-//TODO HANDLE ERROR AND RETRIES!
-}
-*/
+// takes a base64 encoded string that can be associated with a data point in the format: <name> <value> <time in seconds> <base64 string>" do
 
-func parseDriveStats(data string) []EStat {
-   var out  []EStat
-   lines := strings.Split(data, "\n")
-   for _, line := range lines {
-     if(len(line) > 3) {
-        sections := strings.Split(line, " ")
-        if( len(sections) == 5 ) {
-            x, _ := strconv.ParseInt(sections[0], 10, 8)
-            out = append(out, EStat{ sections[4],  "1M-blocks", x})
-            y, _ := strconv.ParseInt(strings.Replace(sections[3], "%", "",-1),  10, 8)
-            out = append(out, EStat{ sections[4],  "AvailablePer", y})
-
-        } else {
-            l4g.Debug("Invalid number of sections %d\n", len(sections))
-        }        
-     }
-   }
-   return out
-}
-
-
-func parseTopStatsLinux(data string) []EStat {
-    return nil;
-}
-
-func getTopOutPut() {
-    myos :=  runtime.GOOS
-    // OSX
-    if myos == "darwin" {
-     cmd = exec.Command("top", "-l", "1")
-    } else {
-      // LINUX
-      cmd = exec.Command("top", "-n1", "-b")
-    }
-
-    stdout, err := cmd.StdoutPipe()
-    if err != nil {
-        log.Fatal(err)
-    }
-    if err := cmd.Start(); err != nil {
-        log.Fatal(err)
-    }
-
-    err  = nil
-    contents,_ := ioutil.ReadAll(stdout)
-
-    l4g.Debug("top output -%s\n\n========\n%s\n", contents, myos)    
-}
-
-func getDfOutPut() []EStat {
-   // var cmdstr string
-//      cmd = exec.Command("df -m  |  sed 's/[  ][   ]*/\\\t/' |  cut  -f 2,3,4,6 | tr -s [:space:] | tail -n+2")
-   // cmdstr = "-c \"df -m | tail -n+2 |  sed 's/[ ]/-/'| tr -s [:space:] | cut -d' ' -f2,3,4,5,6 \""
-    cmd = exec.Command("bash", "-c", "df -m | tail -n+2 |  sed 's/[ ]/-/'| tr -s [:space:] | cut -d' ' -f2,3,4,5,6 ")
-
-    stdout, err := cmd.StdoutPipe()
-    if err != nil {
-        log.Fatal(err)
-    }
-    if err := cmd.Start(); err != nil {
-        log.Fatal(err)
-    }
-
-    err  = nil
-    contents,_ := ioutil.ReadAll(stdout)
-
-    scontents := fmt.Sprintf("%s", contents)
-    l4g.Debug("df output -%s\n\n", contents)    
-    parsed := parseDriveStats(scontents)
-    l4g.Debug("df parsed output -%s\n\n", parsed)    
-    return parsed
-}
-
-func getSysStats( statOutputChan chan<- *[]EStat) {
-    l4g.Debug("Pulling system stats")
-
-    for  {
-      //topstat := getTopOutPut() 
-      //statOutputChan <- &topstat
-      dfstat := getDfOutPut()
-      fmt.Printf("putting data to stat channel")
-      statOutputChan <- &dfstat
-
-      //TODO listen for a death channel
-      time.Sleep(10 * time.Second)
-    }
-}
 
 func readLogData(filename string, log_id int, logOutputChan chan<- *LogTuple, deathChan chan<- *string) {
     cmd := exec.Command("tail", "-f", filename)
@@ -358,7 +253,7 @@ func upgrade_version(new_version string, valid_hash string, out_dir string, agen
 }
 
 //TODO get the poll interval from the brain
-func dataPosting(logOutputChan <-chan *LogTuple, statOutputChan <-chan *[]EStat, api_key string, api_url string) {
+func dataPosting(logOutputChan <-chan *LogTuple, statOutputChan <-chan *[]stats.EStat, api_key string, api_url string) {
     statusInterval := 1 * time.Second //Default it and let the brain update it later
     ticker := time.NewTicker(statusInterval)
     buffer := make(map[int]string)
@@ -375,10 +270,12 @@ func dataPosting(logOutputChan <-chan *LogTuple, statOutputChan <-chan *[]EStat,
       case log_tup := <-logOutputChan:
           buffer[log_tup.Log_id] += log_tup.Data
       case estats := <-statOutputChan:
+          output := ""
           for _,data := range *estats {
-          fmt.Printf("WOOOT GOT A STAT %s %d \n", data.Name, data.Val)
-
+            fmt.Printf("WOOOT GOT A STAT %s %d \n", data.Name, data.Val)
+             output += fmt.Sprintf("%s %d %d \n", data.Name, data.Val, time.Now().Unix() ) 
           }
+          stats.PostStatData(api_key, api_url, output);
       }
     }
 }
@@ -389,14 +286,14 @@ func theBrain( in <-chan *AgentConfigType, api_key string, api_url string) {
 
     logOutputChan := make(chan *LogTuple)
     gorDeathChan := make(chan *string)
-    statOutputChan := make(chan *[]EStat)
+    statOutputChan := make(chan *[]stats.EStat)
 
     //Setup go routine for Data posting
     go dataPosting(logOutputChan, statOutputChan, api_key, api_url)
     runningGoR["SYSTEM_DATA_POST"] = true
 
     //TODO for now always run system stats go routine
-    go getSysStats(statOutputChan)
+    go stats.GetSysStats(statOutputChan)
     runningGoR["SYSTEM_STATS"] = true
 
     for ;; {
