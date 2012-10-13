@@ -3,62 +3,25 @@ package errplane
 import "fmt"
 import "net/http"
 import "bytes"
-//import "io/ioutil"url
 import "log"
 import "os/exec"
-//import "io"
-import "bufio"
 import "time"
 import "runtime"
 import "github.com/kless/goconfig/config"
-import "encoding/json"
 import "os"
 import "io/ioutil"
 import "github.com/droundy/goopt"
-import "strings"
-import "crypto/sha256" 
-import "hash"
 import "strconv"
 import "syscall"
 import "net/url"
 import l4g "code.google.com/p/log4go"
-import stats "errplane/stats"
-import logsp "errplane/logsp"
+import "errplane/stats"
+import "errplane/logsp"
+import econfig "errplane/config"
+import "errplane/daemonize"
 
-var BUILD_NUMBER = "_BUILD_"
-//var BUILD_NUMBER = "1.0.50"
-var DOWNLOAD_LOCATION = "http://download.errplane.com/errplane-local-agent-%s-%s"
-var OUTPUT_FILE_FORMAT = "errplane-local-agent-%s"
 var cmd *exec.Cmd
 
-func FileExist(name string) (bool, error) { 
-    _, err := os.Stat(name) 
-    if err == nil { 
-            return true, nil 
-    } 
-    return false, err 
-} 
-type AgentConfigType struct {
-    Id int
-    Version string
-    Server string
-    Sha256 string //i386
-    Sha256_amd64 string
-    Configuration_interval int
-    Name string
-    Organization_id int
-    Updated_at string
-    Agent_logs   []AgentLogType
-}
-
-type AgentLogType struct {
-    Agent_id int
-    Created_at string
-    Id int
-    Log_id int
-    Updated_at string
-    Log LogType
-}
 
 
 
@@ -77,38 +40,6 @@ func postData(api_key string, api_url string, data string, log_id int) {
 
 // takes a base64 encoded string that can be associated with a data point in the format: <name> <value> <time in seconds> <base64 string>" do
 
-
-func readLogData(filename string, log_id int, logOutputChan chan<- *LogTuple, deathChan chan<- *string) {
-    cmd := exec.Command("tail", "-f", filename)
-    stdout, err := cmd.StdoutPipe()
-    if err != nil {
-        log.Fatal(err)
-    }
-    if err := cmd.Start(); err != nil {
-        log.Fatal(err)
-    }
-
-    err  = nil
-    reader := bufio.NewReader(stdout)
-    sbuffer := ""
-    lines := 0
-    for ; err == nil;  {
-        s,err := reader.ReadString('\n')
-        sbuffer += s
-        lines += 1
-        if(lines > 5 ) { //|| time > 1 min) {
-            logOutputChan <- &LogTuple{ log_id, sbuffer}
-            sbuffer = ""
-            lines = 0
-        }
-        if err != nil {
-            deathChan <- &filename
-            return
-        }
-    }
-
-    //SetFinalizer
-}
 /*
 func parseJsonFromFile() {
         file, e := ioutil.ReadFile("samples/sample_config.json")
@@ -122,32 +53,6 @@ func parseJsonFromFile() {
 
 
 */
-//TODO: IF this fails  read from disk, if that fails sleep until the server is back online
-func parseJsonFromHttp(api_url string, api_key string) AgentConfigType {
-    server, _ :=  os.Hostname() 
-    full_config_url := fmt.Sprintf(api_url + "/api/v1/agents/%s/config?api_key=%s", url.QueryEscape(server), api_key)
-    l4g.Debug("Updating config info %s\n", full_config_url)
-    resp, err := http.Get(full_config_url)
-    if err != nil {
-        // handle error
-        fmt.Printf("error getting config data-%s\n",err)    
-        os.Exit(1)
-    }
-
-    defer resp.Body.Close()
-    body, err := ioutil.ReadAll(resp.Body)
-
-    body2 := []byte(strings.Replace(string(body), "null", "\"\"", -1))//Go doesn't handle nulls in json very well, lets just cheat
-
-    var jsontype  AgentConfigType
-    err = json.Unmarshal(body2, &jsontype)
-    if err != nil {
-        // handle error
-        fmt.Printf("error parsing config data-%s\n",err)    
-        os.Exit(1)
-    }
-    return jsontype
-}
 func write_pid(pid_location string) {
    i := os.Getpid()
    pid := strconv.Itoa(i)
@@ -156,94 +61,9 @@ func write_pid(pid_location string) {
    ioutil.WriteFile(pid_location, []byte(pid), 0644)
 }
 
-func upgrade_version(new_version string, valid_hash string, out_dir string, agent_bin string) {
-   l4g.Debug("Upgrading to current version %s from version %s.\n", new_version, BUILD_NUMBER)
-
-    download_file_url := fmt.Sprintf(DOWNLOAD_LOCATION, new_version, runtime.GOARCH)
-    l4g.Debug("download_file %s\n", download_file_url)
-    resp, err := http.Get(download_file_url)
-    if err != nil {
-        // handle error
-        l4g.Error("error getting config data-%s\n",err)    
-        return
-    }
-    if resp.StatusCode != 200 {
-        // handle error
-        l4g.Error("Recieved a bad http code downloading %d-\n", resp.StatusCode)    
-        return
-    }
-
-    defer resp.Body.Close()
-    download_file, err := ioutil.ReadAll(resp.Body)
-    var h hash.Hash = sha256.New()
-    h.Write(download_file)
-    hash_code := fmt.Sprintf("%x", h.Sum([]byte{}))
-    fmt.Printf("downloaded file with hash of %s\n", hash_code)
-
-    if( hash_code == valid_hash) {
-        l4g.Debug("Sweet valid file downloaded!")
-    } else {
-        l4g.Error("invalid hash!")
-        return
-    }
-
-    out_file := fmt.Sprintf(OUTPUT_FILE_FORMAT, new_version)
-    out_location := out_dir + out_file
-
-
-    err = ioutil.WriteFile(out_location, download_file, 0744)
-    if err != nil {
-       l4g.Error(err) 
-       return
-     }
-
-    fmt.Printf("Finished writing file!\n")
-
-    //ignore errors
-    os.Remove(agent_bin)
-
-    fmt.Printf("symlinking %s to %s\n", out_location, agent_bin)
-    err = os.Symlink(out_location, agent_bin)
-    if err != nil {
-        l4g.Error("Failed symlinking!--%s\n", err)
-        return
-    } 
-//Not entirely sure how to use filemode
-//    err = os.Chmod(agent_bin, FileMode.)
-    cmd = exec.Command("chmod", "+x", agent_bin)
-    err = cmd.Start()
-    if err != nil {
-        l4g.Error("Failed chmoding!--%s\n", err)
-        return
-    } 
-
-    fmt.Printf("Trying new version !\n")
-//    agent_bin  = "/Users/kanwisher/projects/errplane/local_agent/local_agent"
-//    cmd = exec.Command(agent_bin, "-c", "/Users/kanwisher/projects/errplane/local_agent/config/prod_errplane2.conf" )
-//    err = cmd.Start()
-    //argv := []string {"local_agent"} //, "-c", "/Users/kanwisher/projects/errplane/local_agent/config/prod_errplane2.conf"}
-    //var proca syscall.ProcAttr
-    //proca.Env = os.Environ()
-    //proca.Files =  []uintptr{uintptr(syscall.Stdout), uintptr(syscall.Stderr)}
-//     _, err = syscall.ForkExec(agent_bin, argv, &proca)//agent_bin)
-//     err = syscall.Exec("/Users/kanwisher/projects/errplane/local_agent/local_agent", argv, os.Environ())//agent_bin)
-    //TODO for now just launch the daemon script instead of some insane fork/exec stufff
-    if err != nil {
-        l4g.Error("Failed running new version!--%s\n", err)
-        return
-    } else {
-        l4g.Debug("Upgrading! Please wait! \n")
-        do_fork("","")
-        time.Sleep(10 * time.Second)
-        l4g.Debug("Upgraded! Now Extiing! \n")
-        os.Exit(0)
-    }
-
-
-}
 
 //TODO get the poll interval from the brain
-func dataPosting(logOutputChan <-chan *LogTuple, statOutputChan <-chan *[]stats.EStat, api_key string, api_url string) {
+func dataPosting(logOutputChan <-chan *econfig.LogTuple, statOutputChan <-chan *[]stats.EStat, api_key string, api_url string) {
     statusInterval := 1 * time.Second //Default it and let the brain update it later
     ticker := time.NewTicker(statusInterval)
     buffer := make(map[int]string)
@@ -270,11 +90,11 @@ func dataPosting(logOutputChan <-chan *LogTuple, statOutputChan <-chan *[]stats.
     }
 }
 
-func theBrain( in <-chan *AgentConfigType, api_key string, api_url string) {
+func theBrain( in <-chan *econfig.AgentConfigType, api_key string, api_url string) {
     runningGoR := make(map[string]bool)
 
 
-    logOutputChan := make(chan *LogTuple)
+    logOutputChan := make(chan *econfig.LogTuple)
     gorDeathChan := make(chan *string)
     statOutputChan := make(chan *[]stats.EStat)
 
@@ -295,7 +115,7 @@ func theBrain( in <-chan *AgentConfigType, api_key string, api_url string) {
           l4g.Debug("Recieved for config data")
           for _,alog := range config_data.Agent_logs { 
              if( runningGoR[alog.Log.Path] == false) {
-               go readLogData(alog.Log.Path, alog.Log.Id, logOutputChan, gorDeathChan)
+               go logsp.ReadLogData(alog.Log.Path, alog.Log.Id, logOutputChan, gorDeathChan)
                runningGoR[alog.Log.Path] = true
                l4g.Debug("Launched go routine\n")
               }
@@ -309,27 +129,6 @@ func theBrain( in <-chan *AgentConfigType, api_key string, api_url string) {
 }
 
 
-func checkForUpdatedConfigs(auto_update string, config_url string, api_key string, output_dir string, agent_bin string, out chan<- *AgentConfigType) {
-    for ;;  {
-        config_data := parseJsonFromHttp(config_url, api_key)
-        out <- &config_data
-
-
-        if auto_update == "true" && config_data.Version != BUILD_NUMBER {
-          l4g.Debug("Upgrading agent version-%s\n", config_data.Version)
-          hdata := config_data.Sha256
-          if( runtime.GOARCH == "amd64" ) {
-             hdata = config_data.Sha256_amd64
-          }
-          upgrade_version(config_data.Version, hdata, output_dir, agent_bin)
-          l4g.Debug("Failed upgrading!\n")
-        } else {
-            l4g.Fine("Don't need to upgrade versions\n")
-        }
-        time.Sleep(10 * time.Second)
-    }
-
-}
 /*
 func daemon (nochdir, noclose int) int {
   var ret uintptr
@@ -384,24 +183,6 @@ func fork() (pid uintptr, err syscall.Errno) {
 }
 
 
-func do_fork(executable, config_file string) {
-  executable = "/etc/init.d/errplane"
-  
-  bfile,_ := FileExist(executable)
-  if( bfile == false ){
-    fmt.Printf("Can not find daemonizing script " + executable + "! \n")
-    os.Exit(1)
-  }
-
-  cmdstr :=   executable + " -c " + config_file + " --foreground"
-  fmt.Printf(cmdstr + "\n")
-
-  cmd = exec.Command( executable, "start" )
-
-  if err := cmd.Start(); err != nil {
-      log.Fatal(err)
-  }
-}
 
 var config_file = goopt.String([]string{"-c", "--config"}, "/etc/errplane.conf", "config file")
 var install_api_key = goopt.String([]string{"-i", "--install-api-key"},  "", "install api key")
@@ -429,55 +210,14 @@ func setup_logger() {
   }
 }
 
-func test_read( quit <-chan *string) {
 
-  cmd := exec.Command("tail", "-f", "/tmp/matt.txt")
-  stdout, err := cmd.StdoutPipe()
-  if err != nil {
-      log.Fatal(err)
-  }
-  if err := cmd.Start(); err != nil {
-      log.Fatal(err)
-  }
-
-  err  = nil
-  
-  buff := make([]byte,1024)
-  for {
-      n,_ := stdout.Read(buff)
-      if n < 1  {
-        fmt.Printf(" ")
-        break
-      } else {
-        fmt.Printf("0")
-        fmt.Sprintf("found data -%s", n)
-      }
-  }
-  /*
-  reader := bufio.NewReader(stdout)
-
-    for ; err == nil;  {
-        s,err := reader.ReadString('\n')
-        if(err != nil){
-          log.Fatal(err)
-        }
-        fmt.Printf("-%s@", s)
-      }
-      */
-//    outChan <- buff
-  
-}
-
-func Errplane_main() {
-    fmt.Printf("ERRPlane Local Agent starting, Version %s \n", BUILD_NUMBER)
-    quitChan := make(chan *string)
-
-    test_read(quitChan)
+func Errplane_main(defaults econfig.Consts) {
+    fmt.Printf("ERRPlane Local Agent starting, Version %s \n", defaults.Current_build)
 
     goopt.Description = func() string {
         return "ERRPlane Local Agent."
     }
-    goopt.Version = BUILD_NUMBER
+    goopt.Version = defaults.Current_build
     goopt.Summary = "ErrPlane Log and System Monitor"
     goopt.Parse(nil)
 
@@ -514,7 +254,7 @@ func Errplane_main() {
     if(!*amForeground) {
       //Daemonizing requires root
       if( os.Getuid() == 0 ) {
-        do_fork(os.Args[0], fconfig_file)
+        daemonize.Do_fork(os.Args[0], fconfig_file)
         l4g.Fine("Exiting parent process-%s\n", os.Args[0])
         os.Exit(0)
         } else {
@@ -544,12 +284,12 @@ func Errplane_main() {
 
     write_pid(pid_location)
 
-    config_data := parseJsonFromHttp(config_url, api_key)
+    config_data := econfig.ParseJsonFromHttp(config_url, api_key)
 
     l4g.Debug("Expected agent version-%s\n", config_data.Version)
 
-    if auto_update == "true" && config_data.Version != BUILD_NUMBER {
-        upgrade_version(config_data.Version, config_data.Sha256, output_dir, agent_bin)
+    if auto_update == "true" && config_data.Version != defaults.Current_build {
+        econfig.Upgrade_version(config_data.Version, config_data.Sha256, output_dir, agent_bin, defaults)
         os.Exit(1)
     } else {
         l4g.Debug("Don't need to upgrade versions\n")
@@ -561,11 +301,11 @@ func Errplane_main() {
 //        exit(1)
     }
 
-    configChan := make(chan *AgentConfigType)
+    configChan := make(chan *econfig.AgentConfigType)
 
     go theBrain(configChan, api_key, api_url)
 
-    go checkForUpdatedConfigs(auto_update, config_url, api_key, output_dir, agent_bin, configChan)
+    go econfig.CheckForUpdatedConfigs(auto_update, config_url, api_key, output_dir, agent_bin, configChan, defaults)
 
     if err != nil {
         log.Fatal(err)
