@@ -90,8 +90,9 @@ func postData(api_key string, api_url string, data string, log_id int) {
 //TODO HANDLE ERROR AND RETRIES!
 }
 
+/*
 func postStatData(api_key string, api_url string, name string, value int) {
-    l4g.Debug("Posting stat data to server %s\n", name_string)
+    l4g.Debug("Posting stat data to server %s\n", name)
     server_name, _ := os.Hostname() 
 //    contents,_ := ioutil.ReadAll(data);
 //  buf := bytes.NewBuffer("your string")
@@ -102,7 +103,7 @@ func postStatData(api_key string, api_url string, name string, value int) {
     http.Post(url, "application/text", buf2)
 //TODO HANDLE ERROR AND RETRIES!
 }
-
+*/
 
 func parseDriveStats(data string) []EStat {
    var out  []EStat
