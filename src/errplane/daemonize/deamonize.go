@@ -9,20 +9,20 @@ import "log"
 var cmd *exec.Cmd
 
 func Do_fork(executable, config_file string) {
-  executable = "/etc/init.d/errplane"
-  
-  bfile,_ := FileExist(executable)
-  if( bfile == false ){
-    fmt.Printf("Can not find daemonizing script " + executable + "! \n")
-    os.Exit(1)
-  }
+	executable = "/etc/init.d/errplane"
 
-  cmdstr :=   executable + " -c " + config_file + " --foreground"
-  fmt.Printf(cmdstr + "\n")
+	bfile, _ := FileExist(executable)
+	if bfile == false {
+		fmt.Printf("Can not find daemonizing script " + executable + "! \n")
+		os.Exit(1)
+	}
 
-  cmd = exec.Command( executable, "start" )
+	cmdstr := executable + " -c " + config_file + " --foreground"
+	fmt.Printf(cmdstr + "\n")
 
-  if err := cmd.Start(); err != nil {
-      log.Fatal(err)
-  }
+	cmd = exec.Command(executable, "start")
+
+	if err := cmd.Start(); err != nil {
+		log.Fatal(err)
+	}
 }
