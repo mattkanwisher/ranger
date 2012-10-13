@@ -23,6 +23,7 @@ import "syscall"
 import "net/url"
 import l4g "code.google.com/p/log4go"
 import stats "errplane/stats"
+import logsp "errplane/logsp"
 
 var BUILD_NUMBER = "_BUILD_"
 //var BUILD_NUMBER = "1.0.50"
@@ -59,17 +60,6 @@ type AgentLogType struct {
     Log LogType
 }
 
-type LogType struct {
-    Id int
-    Name string
-    Path string
-    Created_at string
-}
-
-type LogTuple struct { 
-   Log_id int; 
-   Data string; 
-} 
 
 
 func postData(api_key string, api_url string, data string, log_id int) {
