@@ -90,6 +90,20 @@ func postData(api_key string, api_url string, data string, log_id int) {
 //TODO HANDLE ERROR AND RETRIES!
 }
 
+func postStatData(api_key string, api_url string, name string, value int) {
+    l4g.Debug("Posting stat data to server %s\n", name_string)
+    server_name, _ := os.Hostname() 
+//    contents,_ := ioutil.ReadAll(data);
+//  buf := bytes.NewBuffer("your string")
+    buf2 := bytes.NewBufferString(data)
+    //TODO url escaping
+    url := fmt.Sprintf("%s//api/v1/time_series/system_%s_%d?api_key=%s", api_url, url.QueryEscape(server_name), value, api_key)
+    l4g.Debug("posting to url -%s\n", url)
+    http.Post(url, "application/text", buf2)
+//TODO HANDLE ERROR AND RETRIES!
+}
+
+
 func parseDriveStats(data string) []EStat {
    var out  []EStat
    lines := strings.Split(data, "\n")
@@ -139,7 +153,7 @@ func getTopOutPut() {
     l4g.Debug("top output -%s\n\n========\n%s\n", contents, myos)    
 }
 
-func getDfOutPut() {
+func getDfOutPut() []EStat {
    // var cmdstr string
 //      cmd = exec.Command("df -m  |  sed 's/[  ][   ]*/\\\t/' |  cut  -f 2,3,4,6 | tr -s [:space:] | tail -n+2")
    // cmdstr = "-c \"df -m | tail -n+2 |  sed 's/[ ]/-/'| tr -s [:space:] | cut -d' ' -f2,3,4,5,6 \""
@@ -160,13 +174,22 @@ func getDfOutPut() {
     l4g.Debug("df output -%s\n\n", contents)    
     parsed := parseDriveStats(scontents)
     l4g.Debug("df parsed output -%s\n\n", parsed)    
+    return parsed
 }
 
-func getSysStats() {
+func getSysStats( statOutputChan chan<- *[]EStat) {
     l4g.Debug("Pulling system stats")
 
-    //getTopOutPut() 
-    getDfOutPut()
+    for  {
+      //topstat := getTopOutPut() 
+      //statOutputChan <- &topstat
+      dfstat := getDfOutPut()
+      fmt.Printf("putting data to stat channel")
+      statOutputChan <- &dfstat
+
+      //TODO listen for a death channel
+      time.Sleep(10 * time.Second)
+    }
 }
 
 func readLogData(filename string, log_id int, logOutputChan chan<- *LogTuple, deathChan chan<- *string) {
@@ -334,10 +357,11 @@ func upgrade_version(new_version string, valid_hash string, out_dir string, agen
 }
 
 //TODO get the poll interval from the brain
-func dataPosting(logOutputChan <-chan *LogTuple, api_key string, api_url string) {
+func dataPosting(logOutputChan <-chan *LogTuple, statOutputChan <-chan *[]EStat, api_key string, api_url string) {
     statusInterval := 1 * time.Second //Default it and let the brain update it later
     ticker := time.NewTicker(statusInterval)
     buffer := make(map[int]string)
+
     for {
       select {
       case <-ticker.C:
@@ -349,6 +373,11 @@ func dataPosting(logOutputChan <-chan *LogTuple, api_key string, api_url string)
         }
       case log_tup := <-logOutputChan:
           buffer[log_tup.Log_id] += log_tup.Data
+      case estats := <-statOutputChan:
+          for _,data := range *estats {
+          fmt.Printf("WOOOT GOT A STAT %s %d \n", data.Name, data.Val)
+
+          }
       }
     }
 }
@@ -359,13 +388,14 @@ func theBrain( in <-chan *AgentConfigType, api_key string, api_url string) {
 
     logOutputChan := make(chan *LogTuple)
     gorDeathChan := make(chan *string)
+    statOutputChan := make(chan *[]EStat)
 
     //Setup go routine for Data posting
-    go dataPosting(logOutputChan, api_key, api_url)
+    go dataPosting(logOutputChan, statOutputChan, api_key, api_url)
     runningGoR["SYSTEM_DATA_POST"] = true
 
     //TODO for now always run system stats go routine
-    go getSysStats()
+    go getSysStats(statOutputChan)
     runningGoR["SYSTEM_STATS"] = true
 
     for ;; {
@@ -511,9 +541,50 @@ func setup_logger() {
   }
 }
 
+func test_read( quit <-chan *string) {
+
+  cmd := exec.Command("tail", "-f", "/tmp/matt.txt")
+  stdout, err := cmd.StdoutPipe()
+  if err != nil {
+      log.Fatal(err)
+  }
+  if err := cmd.Start(); err != nil {
+      log.Fatal(err)
+  }
+
+  err  = nil
+  
+  buff := make([]byte,1024)
+  for {
+      n,_ := stdout.Read(buff)
+      if n < 1  {
+        fmt.Printf(" ")
+        break
+      } else {
+        fmt.Printf("0")
+        fmt.Sprintf("found data -%s", n)
+      }
+  }
+  /*
+  reader := bufio.NewReader(stdout)
+
+    for ; err == nil;  {
+        s,err := reader.ReadString('\n')
+        if(err != nil){
+          log.Fatal(err)
+        }
+        fmt.Printf("-%s@", s)
+      }
+      */
+//    outChan <- buff
+  
+}
 
 func Errplane_main() {
     fmt.Printf("ERRPlane Local Agent starting, Version %s \n", BUILD_NUMBER)
+    quitChan := make(chan *string)
+
+    test_read(quitChan)
 
     goopt.Description = func() string {
         return "ERRPlane Local Agent."
@@ -521,6 +592,7 @@ func Errplane_main() {
     goopt.Version = BUILD_NUMBER
     goopt.Summary = "ErrPlane Log and System Monitor"
     goopt.Parse(nil)
+
 
     var fconfig_file string
     fconfig_file = *config_file
