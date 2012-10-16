@@ -10,7 +10,7 @@ import "io/ioutil"
 import "os/exec"
 import "hash"
 import "time"
-import "errplane/daemonize"
+import "ranger/daemonize"
 
 var cmd *exec.Cmd
 
@@ -75,15 +75,15 @@ func Upgrade_version(new_version string, valid_hash string, out_dir string, agen
 	}
 
 	fmt.Printf("Trying new version !\n")
-	//    agent_bin  = "/Users/kanwisher/projects/errplane/local_agent/local_agent"
-	//    cmd = exec.Command(agent_bin, "-c", "/Users/kanwisher/projects/errplane/local_agent/config/prod_errplane2.conf" )
+	//    agent_bin  = "/Users/kanwisher/projects/ranger/local_agent/local_agent"
+	//    cmd = exec.Command(agent_bin, "-c", "/Users/kanwisher/projects/ranger/local_agent/config/prod_ranger2.conf" )
 	//    err = cmd.Start()
-	//argv := []string {"local_agent"} //, "-c", "/Users/kanwisher/projects/errplane/local_agent/config/prod_errplane2.conf"}
+	//argv := []string {"local_agent"} //, "-c", "/Users/kanwisher/projects/ranger/local_agent/config/prod_ranger2.conf"}
 	//var proca syscall.ProcAttr
 	//proca.Env = os.Environ()
 	//proca.Files =  []uintptr{uintptr(syscall.Stdout), uintptr(syscall.Stderr)}
 	//     _, err = syscall.ForkExec(agent_bin, argv, &proca)//agent_bin)
-	//     err = syscall.Exec("/Users/kanwisher/projects/errplane/local_agent/local_agent", argv, os.Environ())//agent_bin)
+	//     err = syscall.Exec("/Users/kanwisher/projects/ranger/local_agent/local_agent", argv, os.Environ())//agent_bin)
 	//TODO for now just launch the daemon script instead of some insane fork/exec stufff
 	if err != nil {
 		l4g.Error("Failed running new version!--%s\n", err)

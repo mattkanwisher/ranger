@@ -1,25 +1,25 @@
 #!/bin/bash
-CONTROL=packages/deb_pkg/errplane/DEBIAN/control 
-CONTROL_POST=packages/deb_pkg/errplane/DEBIAN/postinst 
-RPM_SPECFILE=packages/rpm_pkg/errplane/specfile.spec
-VER_SRC=src/errplane/local_agent.go
+CONTROL=packages/deb_pkg/ranger/DEBIAN/control 
+CONTROL_POST=packages/deb_pkg/ranger/DEBIAN/postinst 
+RPM_SPECFILE=packages/rpm_pkg/ranger/specfile.spec
+VER_SRC=src/ranger/local_agent.go
 JENKINS_HOME=/var/lib/jenkins
 GOROOT=/var/lib/jenkins/go
 GOBIN=/var/lib/jenkins/bin
 PATH=$PATH:/var/lib/jenkins/bin
-RPM_BUILD_ROOT=${JENKINS_HOME}/jobs/local_agent/workspace/packages/rpm_pkg/errplane/BUILDROOT
-DEB_PKG_ROOT=packages/deb_pkg/errplane
+RPM_BUILD_ROOT=${JENKINS_HOME}/jobs/local_agent/workspace/packages/rpm_pkg/ranger/BUILDROOT
+DEB_PKG_ROOT=packages/deb_pkg/ranger
 OUT_EXE=packages/out_exe
 
 #copy out latest rpm macro file
-cp packages/rpm_pkg/errplane/dot_rpm_macros ${JENKINS_HOME}/.rpmmacros
+cp packages/rpm_pkg/ranger/dot_rpm_macros ${JENKINS_HOME}/.rpmmacros
 
 rm -rf output  ; true
 mkdir output
 mkdir $OUT_EXE
-rm ./packages/deb_pkg/errplane*.deb
-rm ./packages/deb_pkg/errplane-local-agent*
-rm packages/rpm_pkg/errplane/RPMS/x86_64/errplane*
+rm ./packages/deb_pkg/ranger*.deb
+rm ./packages/deb_pkg/ranger-local-agent*
+rm packages/rpm_pkg/ranger/RPMS/x86_64/ranger*
 rm $OUT_EXE/*
 
 function do_build() {
@@ -40,13 +40,13 @@ function do_build() {
   go get github.com/droundy/goopt
   go get code.google.com/p/log4go
   GOPATH=`pwd`:$GOPATH GOARCH=$2 GOOS=linux go build -o local_agent -v  main
-  #cp local_agent packages/deb_pkg/errplane/usr/local/bin/errplane-local-agent
+  #cp local_agent packages/deb_pkg/ranger/usr/local/bin/ranger-local-agent
   chmod +x local_agent
-  rm ${DEB_PKG_ROOT}/usr/local/errplane/errplane-local-agent*
-  cp local_agent packages/deb_pkg/errplane/usr/local/errplane/errplane-local-agent-${NEW_BUILD_NUMBER}
-  cp local_agent ${OUT_EXE}/errplane-local-agent-${NEW_BUILD_NUMBER}-$2
+  rm ${DEB_PKG_ROOT}/usr/local/ranger/ranger-local-agent*
+  cp local_agent packages/deb_pkg/ranger/usr/local/ranger/ranger-local-agent-${NEW_BUILD_NUMBER}
+  cp local_agent ${OUT_EXE}/ranger-local-agent-${NEW_BUILD_NUMBER}-$2
   cd packages/deb_pkg
-  dpkg --build errplane ./
+  dpkg --build ranger ./
   cd ../..
   sha=`shasum -a 256 local_agent`
   echo "SHA 256 - ${sha}"
@@ -60,7 +60,7 @@ do_build amd64 amd64
 
 
 rm -rf ${RPM_BUILD_ROOT}/*
-RPM_BUILD_ROOT_WITH_OS=${RPM_BUILD_ROOT}/errplane-${NEW_BUILD_NUMBER}-1.x86_64
+RPM_BUILD_ROOT_WITH_OS=${RPM_BUILD_ROOT}/ranger-${NEW_BUILD_NUMBER}-1.x86_64
 echo "Trying to create ${RPM_BUILD_ROOT_WITH_OS}"
 mkdir -p $RPM_BUILD_ROOT_WITH_OS
 echo "Trying to create ${RPM_BUILD_ROOT_WITH_OS} to DEB_PKG_ROOT"
@@ -69,7 +69,7 @@ cp -r ${DEB_PKG_ROOT}/usr ${RPM_BUILD_ROOT_WITH_OS}/usr
 cp -r ${DEB_PKG_ROOT}/var ${RPM_BUILD_ROOT_WITH_OS}/var
 
 
-cd packages/rpm_pkg/errplane
+cd packages/rpm_pkg/ranger
 rpmbuild --bb specfile.spec
 cd ../../../
 

@@ -1,7 +1,7 @@
-package errplane_tests
+package ranger_tests
 
 import (
-  "errplane"
+  "ranger"
   "testing"
   "launchpad.net/gocheck"
 )
@@ -14,7 +14,7 @@ type LocalAgentSuite struct{}
 var _ = Suite(&LocalAgentSuite{})
 
 func (s *LocalAgentSuite) TestShouldRequestFoo(c *C) {
-  data, err errplane.dummy_method
+  data, err ranger.dummy_method
 
   c.Check(err, IsNil)
   c.Assert(string(data), Equals, "This is Foo handler!")

@@ -1,6 +1,6 @@
 package daemonize
 
-import . "errplane/common"
+import . "ranger/common"
 import "fmt"
 import "os"
 import "os/exec"
@@ -9,7 +9,7 @@ import "log"
 var cmd *exec.Cmd
 
 func Do_fork(executable, config_file string) {
-	executable = "/etc/init.d/errplane"
+	executable = "/etc/init.d/ranger"
 
 	bfile, _ := FileExist(executable)
 	if bfile == false {

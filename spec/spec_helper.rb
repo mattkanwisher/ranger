@@ -17,11 +17,11 @@ RSpec.configure do |config|
     sleep 2 # wait for the server to start
 
     @pid_agent = fork do
-      File.delete "/tmp/errplane.pid" rescue 0
+      File.delete "/tmp/ranger.pid" rescue 0
       ppath = ENV["spec_path"]
       ppath ||= "."
       `GOPATH=\`pwd\` go build -o spec_agent -v  main`
-       `#{ppath}/spec_agent -c config/spec_errplane.conf`
+       `#{ppath}/spec_agent -c config/spec_ranger.conf`
     end
 
     sleep 2 # wait for the server to start

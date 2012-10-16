@@ -4,7 +4,7 @@ import "os/exec"
 import "log"
 import "bufio"
 
-import "errplane/config"
+import "ranger/config"
 
 func ReadLogData(filename string, log_id int, logOutputChan chan<- *config.LogTuple, deathChan chan<- *string) {
 	cmd := exec.Command("tail", "-f", filename)

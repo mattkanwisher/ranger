@@ -1,4 +1,4 @@
-%_topdir /var/lib/jenkins/jobs/local_agent/workspace/packages/rpm_pkg/errplane
+%_topdir /var/lib/jenkins/jobs/local_agent/workspace/packages/rpm_pkg/ranger
 %_builddir %{_topdir}/BUILD
 %_rpmdir %{_topdir}/RPMS
 %_sourcedir %{_topdir}/SOURCES

@@ -1,4 +1,4 @@
 #!/bin/bash
 echo "postinst"
-rm /usr/local/bin/errplane-local-agent ; true
-ln -s /usr/local/errplane/errplane-local-agent-_BUILD_ /usr/local/bin/errplane-local-agent
+rm /usr/local/bin/ranger-local-agent ; true
+ln -s /usr/local/ranger/ranger-local-agent-_BUILD_ /usr/local/bin/ranger-local-agent

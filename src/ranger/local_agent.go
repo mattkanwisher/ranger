@@ -1,4 +1,4 @@
-package errplane
+package ranger
 
 import "fmt"
 import "net/http"
@@ -15,10 +15,10 @@ import "strconv"
 import "syscall"
 import "net/url"
 import l4g "code.google.com/p/log4go"
-import "errplane/stats"
-import "errplane/logsp"
-import econfig "errplane/config"
-import "errplane/daemonize"
+import "ranger/stats"
+import "ranger/logsp"
+import econfig "ranger/config"
+import "ranger/daemonize"
 
 var cmd *exec.Cmd
 
@@ -175,12 +175,12 @@ func fork() (pid uintptr, err syscall.Errno) {
 
 }
 
-var config_file = goopt.String([]string{"-c", "--config"}, "/etc/errplane.conf", "config file")
+var config_file = goopt.String([]string{"-c", "--config"}, "/etc/ranger.conf", "config file")
 var install_api_key = goopt.String([]string{"-i", "--install-api-key"}, "", "install api key")
 var amForeground = goopt.Flag([]string{"--foreground"}, []string{"--background"}, "run foreground", "run background")
 
 func setup_logger() {
-	filename := "/var/log/errplane/errplane.log"
+	filename := "/var/log/ranger/ranger.log"
 
 	// Create a default logger that is logging messages of FINE or higher to filename, no rotation
 	//    log.AddFilter("file", l4g.FINE, l4g.NewFileLogWriter(filename, false))
@@ -218,7 +218,7 @@ func Errplane_main(defaults econfig.Consts) {
 
 	c, err := config.ReadDefault(fconfig_file)
 	if err != nil {
-		log.Fatal("Can not find the Errplane Config file, please install it in /etc/errplane/errplane.conf.")
+		log.Fatal("Can not find the Errplane Config file, please install it in /etc/ranger/ranger.conf.")
 	}
 
 	api_key, _ := c.String("DEFAULT", "api_key")
@@ -230,7 +230,7 @@ func Errplane_main(defaults econfig.Consts) {
 
 		c, err := config.ReadDefault(fconfig_file)
 		if err != nil {
-			log.Fatal("Can not find the Errplane Config file, please install it in /etc/errplane/errplane.conf.")
+			log.Fatal("Can not find the Errplane Config file, please install it in /etc/ranger/ranger.conf.")
 		}
 		api_key, _ = c.String("DEFAULT", "api_key")
 	}
@@ -258,15 +258,15 @@ func Errplane_main(defaults econfig.Consts) {
 	config_url, _ := c.String("DEFAULT", "config_host")
 	output_dir, _ := c.String("DEFAULT", "agent_path")
 	if len(output_dir) < 1 {
-		output_dir = "/usr/local/errplane/"
+		output_dir = "/usr/local/ranger/"
 	}
 	agent_bin, _ := c.String("DEFAULT", "agent_bin")
 	if len(agent_bin) < 1 {
-		agent_bin = "/usr/local/bin/errplane-local-agent"
+		agent_bin = "/usr/local/bin/ranger-local-agent"
 	}
 	pid_location, _ := c.String("DEFAULT", "pid_file")
 	if len(pid_location) < 1 {
-		pid_location = "/var/run/errplane/errplane.pid"
+		pid_location = "/var/run/ranger/ranger.pid"
 	}
 	auto_update, _ := c.String("DEFAULT", "auto_upgrade")
 

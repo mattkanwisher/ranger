@@ -13,10 +13,10 @@ describe "the log file api" do
   end
 
   it "posts multiple lines from a log file (oldest first line to newest last line) with the current time" do
-    response = post_with_body("/api/v1/logs/#{@log_id}/agents/#{@agent_id}?api_key=ignored", @body1)
+    response = post_with_body("/api/v1/logs/#{@log_id}/agents/#{@agent_id}?api_key=test_key", @body1)
     response[:code].should == 200
     
-    response = get("/api/v1/logs/#{@log_id}/agents/#{@agent_id}?api_key=ignored")
+    response = get("/api/v1/logs/#{@log_id}/agents/#{@agent_id}?api_key=test_key")
     lines =  parse_json(response[:body])
     ids = lines.map {|l| l[0]}
     times = lines.map {|l| l[1]}
@@ -26,10 +26,10 @@ describe "the log file api" do
 
   it "posts multiple lines from a log file with a given seconds since epoch" do
     time = (Time.now.to_i - 5) * 1000
-    response = post_with_body("/api/v1/logs/#{@log_id}/agents/#{@agent_id}?api_key=ignored&time=#{time}", @body2)
+    response = post_with_body("/api/v1/logs/#{@log_id}/agents/#{@agent_id}?api_key=test_key&time=#{time}", @body2)
     response[:code].should == 200
     
-    response = get("/api/v1/logs/#{@log_id}/agents/#{@agent_id}?api_key=ignored")
+    response = get("/api/v1/logs/#{@log_id}/agents/#{@agent_id}?api_key=test_key")
     lines =  parse_json(response[:body])
     ids = lines.map {|l| l[0]}
     times = lines.map {|l| l[1]}
@@ -49,13 +49,13 @@ describe "the log file api" do
     now_lines = ["this is now", "and this is later"]
     one_day_ago_lines = ["from yesterday", "some log lines that are old", "and some more old stuff"]
 
-    response = post_with_body("/api/v1/logs/#{log_id}/agents/#{agent_id}?api_key=ignored&time=#{one_day_ago}", one_day_ago_lines.join("\n"))
+    response = post_with_body("/api/v1/logs/#{log_id}/agents/#{agent_id}?api_key=test_key&time=#{one_day_ago}", one_day_ago_lines.join("\n"))
     response[:code].should == 200
 
-    response = post_with_body("/api/v1/logs/#{log_id}/agents/#{agent_id}?api_key=ignored", now_lines.join("\n"))
+    response = post_with_body("/api/v1/logs/#{log_id}/agents/#{agent_id}?api_key=test_key", now_lines.join("\n"))
     response[:code].should == 200
 
-    response = get("/api/v1/logs/#{log_id}/agents/#{agent_id}?api_key=ignored&start=#{one_day_ago}")
+    response = get("/api/v1/logs/#{log_id}/agents/#{agent_id}?api_key=test_key&start=#{one_day_ago}")
     response[:code].should == 200
     lines =  parse_json(response[:body])
     ids = lines.map {|l| l[0]}
@@ -78,11 +78,11 @@ describe "the log file api" do
     log_id = "counter_test_#{Time.now.to_i}"
     agent_id = "1"
 
-    response = post_with_body("/api/v1/logs/#{log_id}/agents/#{agent_id}?api_key=ignored", body)
+    response = post_with_body("/api/v1/logs/#{log_id}/agents/#{agent_id}?api_key=test_key", body)
     response[:code].should == 200
 
     time_series_id = "counters_#{log_id}_#{agent_id}"
-    response = get("/api/v1/time_series/#{time_series_id}?api_key=ignored")
+    response = get("/api/v1/time_series/#{time_series_id}?api_key=test_key")
     response[:code].should == 200
     json = parse_json(response[:body])
 
@@ -97,10 +97,10 @@ describe "the log file api" do
     agent_id = "127.0.0.1"
 
     older_lines = ["old 1", "old line 2"]
-    response = post_with_body("/api/v1/logs/#{log_id}/agents/#{agent_id}?api_key=ignored", older_lines.join("\n"))
+    response = post_with_body("/api/v1/logs/#{log_id}/agents/#{agent_id}?api_key=test_key", older_lines.join("\n"))
     response[:code].should == 200
 
-    response = get("/api/v1/logs/#{log_id}/agents/#{agent_id}?api_key=ignored")
+    response = get("/api/v1/logs/#{log_id}/agents/#{agent_id}?api_key=test_key")
     response[:code].should == 200
     lines =  parse_json(response[:body])
     ids = lines.map {|l| l[0]}
@@ -109,13 +109,13 @@ describe "the log file api" do
     content.should == older_lines
 
     newer_lines = ["something newer", "and the latest"]
-    response = post_with_body("/api/v1/logs/#{log_id}/agents/#{agent_id}?api_key=ignored", newer_lines.join("\n"))
+    response = post_with_body("/api/v1/logs/#{log_id}/agents/#{agent_id}?api_key=test_key", newer_lines.join("\n"))
     response[:code].should == 200
 
     last_line_id = ids.last
     last_line_time = times.last
 
-    response = get("/api/v1/logs/#{log_id}/agents/#{agent_id}/since_time/#{last_line_time}/and_id/#{last_line_id}?api_key=ignored")
+    response = get("/api/v1/logs/#{log_id}/agents/#{agent_id}/since_time/#{last_line_time}/and_id/#{last_line_id}?api_key=test_key")
     response[:code].should == 200
     lines =  parse_json(response[:body])
     ids = lines.map {|l| l[0]}
@@ -137,7 +137,7 @@ describe "testing parsing rules" do
       :regex => "(\\d+).*(\\d\\d\\d\\d)-(\\d\\d)-(\\d\\d).*(\\d+\\.\\d+)",
       :group_names => ["timestamp", "year", "month", "day", "response_time"]
     }
-    response = post_with_body("/api/v1/parsing_rules/test?api_key=ignored", test_rule.to_json)
+    response = post_with_body("/api/v1/parsing_rules/test?api_key=test_key", test_rule.to_json)
     response[:code].should == 200
 
     json = parse_json(response[:body])
@@ -154,7 +154,7 @@ describe "testing parsing rules" do
       :regex => "(\\d+).*(\\d\\d\\d\\d-(\\d\\d)-(\\d\\d).*(\\d+\\.\\d+)",
       :group_names => ["timestamp", "year", "month", "day", "response_time"]
     }
-    response = post_with_body("/api/v1/parsing_rules/test?api_key=ignored", test_rule.to_json)
+    response = post_with_body("/api/v1/parsing_rules/test?api_key=test_key", test_rule.to_json)
     response[:code].should == 200
 
     json = parse_json(response[:body])
@@ -167,7 +167,7 @@ describe "testing parsing rules" do
       :regex => "(\\d+).*(\\d\\d\\d\\d)-(\\d\\d)-(\\d\\d).*(\\d+\\.\\d+)",
       :group_names => ["timestamp", "year", "month", "day", "response_time"]
     }
-    response = post_with_body("/api/v1/parsing_rules/test?api_key=ignored", test_rule.to_json)
+    response = post_with_body("/api/v1/parsing_rules/test?api_key=test_key", test_rule.to_json)
     response[:code].should == 200
 
     json = parse_json(response[:body])
@@ -211,12 +211,12 @@ describe "creating time series from parsing rules" do
     ].join("\n")
 
     start_time = Time.now.to_f * 1000 / 1
-    response = post_with_body("/api/v1/logs/#{log_id}/agents/#{agent_id}?api_key=ignored", log_lines)
+    response = post_with_body("/api/v1/logs/#{log_id}/agents/#{agent_id}?api_key=test_key", log_lines)
     puts_response(response)
     response[:code].should == 200
     stop_time = Time.now.to_f * 1000 / 1
 
-    response = get("/api/v1/time_series/#{agent_id}_#{log_id}_#{time_series_name}?api_key=ignored")
+    response = get("/api/v1/time_series/#{agent_id}_#{log_id}_#{time_series_name}?api_key=test_key")
     response[:code].should == 200
     json = parse_json(response[:body])
 

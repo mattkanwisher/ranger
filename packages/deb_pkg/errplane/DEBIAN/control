@@ -1,8 +1,8 @@
-Package: errplane 
+Package: ranger 
 Version: _BUILD_
 Section: base 
 Priority: optional 
 Architecture: _OS_ 
 Depends: bash 
-Maintainer: support@errplane.com 
+Maintainer: support@ranger.com 
 Description: ErrPlane Local agent 

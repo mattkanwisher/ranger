@@ -1,12 +1,12 @@
 #!/bin/sh
 
-DAEMON=/usr/local/bin/errplane-local-agent
+DAEMON=/usr/local/bin/ranger-local-agent
 PARAMS="--foreground"
-LOGFILE=/var/log/errplane/daemon.log
+LOGFILE=/var/log/ranger/daemon.log
 
 start() {
     echo -n "starting up $DAEMON"
-    mkdir -p /var/log/errplane;true
+    mkdir -p /var/log/ranger;true
     RUN=`cd / && nohup $DAEMON $PARAMS > $LOGFILE 2>&1 &`
 
     if [ "$?" -eq 0 ]; then
@@ -17,11 +17,11 @@ start() {
 }
 
 stop() {
-    pkill -9 -f errplane-local-agent
+    pkill -9 -f ranger-local-agent
 }
 
 status() {
-    pgrep -f errplane-local-agent
+    pgrep -f ranger-local-agent
 
     if [ "$?" -eq 0 ]; then
         echo "Running."

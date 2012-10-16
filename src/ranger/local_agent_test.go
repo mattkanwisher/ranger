@@ -1,4 +1,4 @@
-package errplane
+package ranger
 
 import "testing" //import go package for testing related functionality
 
