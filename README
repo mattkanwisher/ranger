@@ -1,0 +1,19 @@
+Ranger is a really easy to setup up sysmonitoring tools similiar to nagios or ganglia. However its primary focus is easier configuration, more modern visualizations and also allowing for hosted soltuions.
+
+
+Things ranger does well
+
+1) Monitor cpu, load and memory of unix machines
+2) Monitor for errors in log files 
+3) Monitor processes of known things, like mysql, postgres and mongodb out of the box with little configuration.
+4) Distributed configuration from the Ranger Central server, so no having to change configs on boxes
+5) Auto updates of Ranger code,  from the offial S3 version. (You don't have to use this if you want to manage the versions yourself. We like the Chrome approach and software is alawys fresh)
+6) Notifications can be grouped such not to become obnoxious like other tools
+7) Send text messages if you sign up for Twillio or Ranger Hosted solution.
+
+
+Things its not a replacement for
+
+1) Monit, we don't handle restarting processes that have problems.
+2) Splunk / Logstash, we don't store log data only look for errors in logs
+3) Application level monitoring, we purposely don't handle this to be a more focused tool on systems.
