@@ -1,6 +1,5 @@
 Ranger is a really easy to setup up sysmonitoring tools similiar to nagios or ganglia. However its primary focus is easier configuration, more modern visualizations and also allowing for hosted soltuions.
 
-
 Things ranger does well
 
 1) Monitor cpu, load and memory of unix machines
@@ -17,3 +16,7 @@ Things its not a replacement for
 1) Monit, we don't handle restarting processes that have problems.
 2) Splunk / Logstash, we don't store log data only look for errors in logs
 3) Application level monitoring, we purposely don't handle this to be a more focused tool on systems.
+
+
+
+License is GPL3, scripts that it calls are excluded from this, if you want to add your own plugins nagios style. 
