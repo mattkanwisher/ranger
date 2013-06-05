@@ -6,7 +6,7 @@ Things ranger does well
 2) Monitor for errors in log files 
 3) Monitor processes of known things, like mysql, postgres and mongodb out of the box with little configuration.
 4) Distributed configuration from the Ranger Central server, so no having to change configs on boxes
-5) Auto updates of Ranger code,  from the offial S3 version. (You don't have to use this if you want to manage the versions yourself. We like the Chrome approach and software is alawys fresh)
+5) Auto updates of Ranger code,  from the offical S3 version. (You don't have to use this if you want to manage the versions yourself. We like the Chrome approach and software is always fresh)
 6) Notifications can be grouped such not to become obnoxious like other tools
 7) Send text messages if you sign up for Twillio or Ranger Hosted solution.
 
